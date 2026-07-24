@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from openpyxl import load_workbook
-from openpyxl.styles import Alignment, Font, PatternFill
+from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 
 ROOT = Path(__file__).resolve().parents[1]
 REB = ROOT / "rebuttal"
@@ -235,7 +235,7 @@ def simple_result_workbook(raw):
                 values = dict(zip(keys, key_values))
                 method = values.get("method", "zofo")
                 if group == "main_comparison":
-                    value = method_name(method)
+                    value = "默认设置"
                 elif group == "M_sweep":
                     value = f"M={int(values['M'])}"
                 elif group == "delta_sweep":
@@ -278,33 +278,81 @@ def simple_result_workbook(raw):
                     "所做任务": "AUC 最大化" if values["task"] == "auc" else "稳健分类",
                     "结果": result,
                 })
-        simple = pd.DataFrame(rows, columns=columns).sort_values(
-            ["所做任务", "数据集", "消融变量", "方法", "对应的值"]
-        )
+        simple = pd.DataFrame(rows, columns=columns)
+
+    method_order = {"ZOFOSGDA": 0, "TTGDA": 1, "TTSGDA": 2}
+    methods = list(method_order)
+    comparison = simple[simple["消融变量"] == "方法对比"].copy()
+    ablations = simple[simple["消融变量"] != "方法对比"].copy()
+    comparison["_method_order"] = comparison["方法"].map(method_order).fillna(99)
+    comparison = comparison.sort_values(["所做任务", "数据集", "_method_order"]).drop(columns="_method_order")
+
+    # For every ablation condition, place the condition-specific method and the
+    # other two methods' equal-query main baselines in one consecutive triplet.
+    baseline = {
+        (r["所做任务"], r["数据集"], r["方法"]): r["结果"]
+        for _, r in comparison.iterrows()
+    }
+    triplet_rows = []
+    condition_keys = ["所做任务", "数据集", "消融变量", "对应的值"]
+    for condition, g in ablations.groupby(condition_keys, dropna=False, sort=True):
+        task_name, dataset, variable, value = condition
+        actual = {r["方法"]: r for _, r in g.iterrows()}
+        for method in methods:
+            if method in actual:
+                result = actual[method]["结果"]
+                shown_value = value
+            else:
+                result = baseline.get((task_name, dataset, method), "无对应基线")
+                shown_value = "同 query 基线"
+            triplet_rows.append({
+                "数据集": dataset,
+                "方法": method,
+                "消融变量": variable,
+                "对应的值": shown_value,
+                "所做任务": task_name,
+                "结果": result,
+            })
+    ablation_triplets = pd.DataFrame(triplet_rows, columns=columns)
+    grouped = pd.concat([comparison, ablation_triplets], ignore_index=True)
 
     with pd.ExcelWriter(SIMPLE_WORKBOOK, engine="openpyxl") as writer:
-        simple.to_excel(writer, sheet_name="实验结果简表", index=False)
+        grouped.to_excel(writer, sheet_name="三方法成组", index=False)
+        comparison.to_excel(writer, sheet_name="仅主对比", index=False)
     wb = load_workbook(SIMPLE_WORKBOOK)
-    ws = wb["实验结果简表"]
-    ws.freeze_panes = "A2"
-    ws.auto_filter.ref = ws.dimensions
     header_fill = PatternFill("solid", fgColor="1F4E78")
-    for cell in ws[1]:
-        cell.fill = header_fill
-        cell.font = Font(color="FFFFFF", bold=True)
-        cell.alignment = Alignment(horizontal="center")
     widths = {"A": 20, "B": 16, "C": 24, "D": 32, "E": 16, "F": 24}
-    for col, width in widths.items():
-        ws.column_dimensions[col].width = width
-    for row in ws.iter_rows(min_row=2):
-        for cell in row:
-            cell.alignment = Alignment(vertical="center")
-        if str(row[5].value).startswith("待运行"):
-            row[5].fill = PatternFill("solid", fgColor="D9EAF7")
-        elif str(row[5].value).startswith("运行中") or str(row[5].value).startswith("当前"):
-            row[5].fill = PatternFill("solid", fgColor="FFF2CC")
-        else:
-            row[5].fill = PatternFill("solid", fgColor="C6EFCE")
+    top = Side(style="medium", color="5B9BD5")
+    cluster_fills = [PatternFill("solid", fgColor="EAF2F8"), PatternFill("solid", fgColor="F7F9F9")]
+    for ws in wb.worksheets:
+        ws.freeze_panes = "A2"
+        ws.auto_filter.ref = ws.dimensions
+        for cell in ws[1]:
+            cell.fill = header_fill
+            cell.font = Font(color="FFFFFF", bold=True)
+            cell.alignment = Alignment(horizontal="center")
+        for col, width in widths.items():
+            ws.column_dimensions[col].width = width
+        for start in range(2, ws.max_row + 1, 3):
+            fill = cluster_fills[((start - 2) // 3) % 2]
+            for r in range(start, min(start + 3, ws.max_row + 1)):
+                for c in range(1, 6):
+                    ws.cell(r, c).fill = fill
+                for c in range(1, 7):
+                    cell = ws.cell(r, c)
+                    cell.alignment = Alignment(vertical="center")
+                    if r == start:
+                        cell.border = Border(top=top)
+                result_cell = ws.cell(r, 6)
+                text = str(result_cell.value)
+                if text.startswith("待运行"):
+                    result_cell.fill = PatternFill("solid", fgColor="D9EAF7")
+                elif text.startswith("运行中") or text.startswith("当前"):
+                    result_cell.fill = PatternFill("solid", fgColor="FFF2CC")
+                elif text == "无对应基线":
+                    result_cell.fill = PatternFill("solid", fgColor="E7E6E6")
+                else:
+                    result_cell.fill = PatternFill("solid", fgColor="C6EFCE")
     wb.save(SIMPLE_WORKBOOK)
 
 def refresh():
