@@ -1,0 +1,15 @@
+# Python caches and local tooling
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.DS_Store
+
+# Local experiment/debug caches
+debugpy*/
+wandb/
+
+# Files exceeding GitHub's 100 MB per-file limit.
+# These are downloadable/extracted CIFAR datasets, not source code.
+/ZOFOGDA_GAN/data/cifar-10-python.tar.gz
+/ZOFOGDA_GAN/data/cifar-100-python.tar.gz
+/ZOFOGDA_GAN/data/cifar-100-python/train
