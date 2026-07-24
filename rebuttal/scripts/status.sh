@@ -11,12 +11,12 @@ import json,sys
 p=sys.argv[1]; d=json.load(open(p)); print(f"GPU {d['gpu']}: {d['status']} run={d.get('run_id','-')} {d.get('index','-')}/{d.get('total','-')} ok={d.get('completed_this_worker',0)} fail={d.get('failed',0)}")
 PY2
 done
-echo "=== result counts ==="
+echo "=== formal registry result counts ==="
 python - <<'PY2'
 import json
 from pathlib import Path
 c={}
-for p in Path('rebuttal/results').glob('*/summary.json'):
+for p in Path('rebuttal/results').glob('p*/summary.json'):
  try:s=json.load(open(p)).get('status','unknown')
  except:s='broken'
  c[s]=c.get(s,0)+1
