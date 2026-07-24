@@ -1,0 +1,44 @@
+{
+  "total_runs": 1082,
+  "by_phase": {
+    "1": 270,
+    "2": 210,
+    "3": 192,
+    "4": 90,
+    "5": 144,
+    "6": 176
+  },
+  "by_group": {
+    "M_delta_interaction": 144,
+    "M_momentum_interaction": 144,
+    "M_sweep": 120,
+    "coefficient_batch": 216,
+    "delta_sweep": 150,
+    "dimension": 120,
+    "direction_ablation": 30,
+    "fo_lr_sweep": 180,
+    "main_comparison": 90,
+    "momentum": 120,
+    "perturbation_form": 60
+  },
+  "queue_lengths": [
+    135,
+    135,
+    134,
+    135,
+    135,
+    137,
+    136,
+    135
+  ],
+  "estimated_loads": [
+    8723500.0,
+    8689000.0,
+    8725000.0,
+    8690500.0,
+    8726500.0,
+    8692000.0,
+    8689500.0,
+    8689500.0
+  ]
+}

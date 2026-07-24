@@ -1,0 +1,22 @@
+{
+  "run_id": "smoke_auc_zo_m5",
+  "experiment_groups": "smoke",
+  "task": "auc",
+  "dataset": "svmguide1",
+  "method": "zofo",
+  "estimator": "two_sided",
+  "seed": 42,
+  "data_seed": 0,
+  "device": "cuda:0",
+  "output_dir": "rebuttal/results/smoke_auc_zo_m5",
+  "hidden": 32,
+  "batch_size": 128,
+  "max_train_forward_queries": 55,
+  "eval_every_forward_queries": 22,
+  "eval_train_batches": 1,
+  "M": 5,
+  "delta": 0.001,
+  "x_momentum": true,
+  "y_momentum": true,
+  "save_model": false
+}

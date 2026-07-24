@@ -1,617 +1,542 @@
-# NeurIPS 2026 Rebuttal 实验梳理与执行计划
+# NeurIPS 2026 Rebuttal 实验执行计划（按老师要求修订）
 
-> 论文：*Hybrid Zeroth- and First-Order Method for Stochastic Nonsmooth Minimax Optimization*  
-> Submission：10118  
-> 项目目录：`/hy-tmp/LiuDongxu`  
-> 整理日期：2026-07-24
+> 论文：*Hybrid Zeroth- and First-Order Method for Stochastic Nonsmooth Minimax Optimization*
+> Submission：10118
+> 项目目录：`/hy-tmp/ZOFOGDA_Nips26`
+> 修订日期：2026-07-24
 
-## 1. 先说结论
+## 1. 最终实验主线
 
-本次 rebuttal 最需要补的不是更多“最终 AUC/Accuracy 数字”，而是以下四组能直接回答 reviewer 的实验：
+老师要求的三组实验是：
 
-1. **公平的 oracle/query-cost 对比**：横轴不能只用 epoch/iteration；至少补 cumulative function evaluations、processed samples 和 wall-clock time。
-2. **x-momentum 与 y-momentum 独立消融**：必须有 Full、No-x、No-y、No-both 四个版本，不能只调 `c1=c2`。
-3. **查询方向数 `q` 与维度 `d1` 的关系**：回答固定 `q=5` 在高维是否退化，以及 `q` 增大后方差/性能/成本如何变化。
-4. **平滑参数 `delta` 敏感性**：说明实践中的 `delta` 是否必须跟目标精度绑定，以及结果对 `delta` 是否稳定。
+1. **M 的影响**：`M in {1, 5, 10, 15}`；
+2. **零阶扰动的消融**；
+3. **分别去掉 x/y 动量**：去掉后直接使用当前梯度估计更新，并在相同 query 下比较；所有一阶方法也要重新跑。
 
-建议的 rebuttal 最小闭环为：
+所有实验的共同条件：
 
-- 先修正公平性与日志统计；
-- 在 Svmguide1、Spambase、A9a（低/中/高维）上完成四种 momentum 消融；
-- 在同三组数据上完成 `q`/维度实验和 `delta` 敏感性；
-- 对论文 Table 3 的六个数据集补齐缺失 seed，并用统一实现重画 query-cost/time 曲线；
-- Robust Classification 至少在 Svmguide1 上复核一次；若原始四个数据集和配置无法及时恢复，不要声称当前仓库能完整复现 Table 2。
+- 使用相同的累计训练 forward 次数作为停止条件；
+- 报告指标随 cumulative forward queries 的曲线；
+- 额外报告 wall-clock、一阶 backward 次数和 sample-forward 数；
+- evaluation forward 单独计数，不能混入训练 query；
+- batch size、数据划分、模型、seed、评估频率保持一致；
+- 旧实验只有 epoch 横轴且没有 query 计数，不能直接作为这次公平比较的主结果。
 
-理论错误（unit ball/sphere、Lemma B.1、复杂度比较）不是实验能够补救的，应由理论负责人并行处理。实验侧只能确保 estimator 实现、成本口径和论文字句一致。
+建议主数据集使用：
 
----
+- Svmguide1：低维；
+- Spambase：中维；
+- A9a：高维。
 
-## 2. 项目结构与论文对应关系
+每组正式实验统一使用 seeds `{14, 42, 81}`，报告 mean ± std；时间紧时可先用 seed 42 做 smoke test，但最终进入 rebuttal 的结果必须补齐三组 seed。
 
-### 2.1 主要目录
+## 2. 与我之前理解的差异
 
-| 路径 | 内容 | 与本次 rebuttal 的关系 |
+| 项目 | 之前的理解 | 按老师要求修正后 |
 |---|---|---|
-| `26.1.29.ZOFOGDA_AUC/` | AUC maximization：ZOFOGDA、TTGDA、TTSGDA、数据、CSV 结果 | **主战场，优先使用** |
-| `ZOFOGDA_AUC/` | 较早版本的 AUC 代码和少量结果 | 仅作参考，不建议混用 |
-| `ZOFOGDA_GAN/` | GAN 代码与早期 robust classification 脚本混在一起 | Robust classification 可参考，但需整理后再跑 |
-| `26.1.24.ZOFO_AdaGDA-main/` | OPT-1.3B / PEFT / bilevel meta-training | 对应附录 A.5；评审未要求，**非优先项** |
-| `10118_Hybrid_Zeroth_and_First_.pdf` | 投稿论文 | 实验设定和原始表格依据 |
+| `M` | 我使用代码变量 `q` 表示方向数，并计划额外做维度扩展 | 主实验直接按老师指定的 `M={1,5,10,15}`；代码中暂映射为 `zo_q`，图表统一写 `M` |
+| 零阶扰动 | 主要理解为 smoothing radius `delta` 敏感性 | 为避免漏项，拆成“扰动半径”和“扰动形式”两层 |
+| 公平预算 | 区分 ZO function oracle 与 FO gradient oracle | 主横轴按老师指定的实际 forward 次数统一，同时附列 backward 次数 |
+| 一阶 baseline | 原计划只补缺失 seed，部分旧结果可能复用 | TTGDA、TTSGDA 必须全部用新计数逻辑重跑 |
+| 动量消融 | Full / No-x / No-y / No-both | 版本不变，但关闭后必须是直接梯度更新，不能通过 `c1=0` 或 `c2=0` 实现 |
 
-### 2.2 论文中的已有实验
+### 2.1 `M` 的术语风险
 
-- Robust classification：
-  - 数据集：Australian、Svmguide1、Breast-cancer、Ionosphere_scale；
-  - 指标：test accuracy；
-  - baseline：TTGDA、TTSGDA；
-  - 论文称三组随机种子、batch size 128、ZO 查询方向数/批量参数为 5。
-- AUC maximization：
-  - 主表数据集：Climate、German、Svmguide1、Spambase、A9a、Ijcnn1；
-  - 附录还描述了 Covtype、Connect、Acoustic；
-  - 指标：test AUC；
-  - baseline：TTGDA、TTSGDA；
-  - 三组随机种子。
-- 已有消融：
-  - `c1=c2 in {1,2,3}`；
-  - batch size in `{64,128,256}`。
+论文和代码里存在命名混用：论文理论中的 `M` 可能指 batch/样本平均数，而当前代码使用 `zo_q` 表示每次 x 更新的随机方向数。
 
-现有 `c1/c2 + batch size` 消融不能替代 reviewer 要求的 momentum 消融。改变 EMA 系数只是在改变动量强弱，并不等价于严格关闭 x 或 y 的 EMA。
-
----
-
-## 3. 评审意见到实验的映射
-
-| 来源 | 评审关切 | 是否要实验 | 对应实验 |
-|---|---|---:|---|
-| 8HnE / Meta Review | 只按 iteration 比较不公平，ZO 一步有多个 function evaluations | 是，最高优先级 | E1：query-cost / sample-cost / wall-clock 公平比较 |
-| 8HnE | 分别去掉 x-momentum 和 y-momentum | 是，最高优先级 | E2：四版本 momentum 消融 |
-| M6Go | ZOFOSGDA 有 momentum，baseline 没有 | 是 | E2；另加 EMA-TTSGDA/EMA-TTGDA wrapper |
-| M6Go | 实践 `q=5`，理论查询量随维度增长；高维且 q 固定是否退化 | 是 | E3：`q x d1` 实验 |
-| M6Go | `delta` 是否和目标精度绑定；对 `delta` 是否敏感 | 是 | E4：平滑参数敏感性 |
-| 8HnE | German 上 TTGDA 更高，Spambase 只是打平，论文 claim 过强 | 可用已有结果回答，但建议复核 | E5：补齐 seed、统一报告 mean/std 和显著性 |
-| dYQd | GGSP/Clarke 的直观解释、最优维度依赖、limitations | 否 | 文字回复/示例，不是实验 |
-| C8sk | 与 concurrent work 的 stationarity/rate 比较 | 否 | 理论对照表，不是实验 |
-| 8HnE / Meta Review | estimator unbiasedness、Lemma B.1 | 否，实验无法修复 | 理论证明必须单独修订 |
-
----
-
-## 4. 开跑前必须处理的实现问题
-
-这些问题不先处理，跑出来的结果不适合放进 rebuttal。
-
-### 4.1 TTGDA 的 batch size 与论文描述不一致
-
-文件：`26.1.29.ZOFOGDA_AUC/ldx_ttgda_auc.py`
-
-当前实现使用：
-
-```python
-N = len(train_ds)
-train_loader = DataLoader(train_ds, batch_size=N, ...)
-```
-
-因此命令行的 `--batch_size 128` 只影响 test loader，训练实际上是 full batch。论文却写“all methods batch size 128”。这会同时破坏：
-
-- 每 epoch 成本公平性；
-- stochastic oracle 次数对齐；
-- wall-clock 对比；
-- TTGDA 与 TTSGDA 的算法区别解释。
-
-**要求**：明确 TTGDA 的原始算法设定。如果 TTGDA 本应 full-batch，就在论文和图表中明确写出，并按 sample-oracle 成本归一化；如果本应 batch 128，则修改实现并重新跑。
-
-### 4.2 当前日志没有 query/oracle 计数
-
-当前 CSV 主要只有：
+本文档暂按下面的映射执行：
 
 ```text
-epoch, train_loss, test_auc, ...
+B = minibatch size，固定为 128
+M = 每次 x 更新的随机方向数，对应代码参数 zo_q
 ```
 
-至少增加：
+从 reviewer 对“一次零阶估计包含多次 function evaluations”的质疑，以及老师强调相同 forward 次数来看，老师所说的 `M` 更可能是随机方向数。如果老师实际指 minibatch size，则需要把实验改为 `batch_size in {1,5,10,15}`，不能混着解释。
+
+## 3. 相同 query 的严格定义
+
+### 3.1 主口径：实际训练 forward 次数
+
+主结果统一使用：
+
+```text
+cum_train_forward_queries
+```
+
+它统计参数更新阶段实际调用目标函数 forward 的次数，不包括 train-set full evaluation、validation 和 test evaluation。
+
+当前 two-sided ZO 更新一次时：
+
+- x 的零阶估计：每个方向需要 `f(x+delta*u)` 和 `f(x-delta*u)`，共 `2M` 次 forward；
+- y 的一阶梯度：当前代码 `grad_y_g(...)` 另做一次 forward + backward；
+- 因此每个 ZOFOSGDA optimization step 约为：
+
+```text
+train_forward_per_ZO_step = 2M + 1
+train_backward_per_ZO_step = 1
+```
+
+如果一阶 TTGDA/TTSGDA 在同一个 loss graph 上同时取得 x/y 梯度，则每步约为：
+
+```text
+train_forward_per_FO_step = 1
+train_backward_per_FO_step = 1
+```
+
+在统一总预算 `Q` 下：
+
+```text
+ZO steps = floor(Q / (2M + 1))
+FO steps = Q
+```
+
+例如 `M=5`、`Q=100000`：
+
+```text
+ZO 最多运行 floor(100000 / 11) = 9090 steps
+FO 最多运行 100000 steps
+```
+
+这正是 reviewer 要求按 query 而不是 iteration 比较的含义：不能让所有方法跑相同 step/epoch 后再声称 ZO 收敛更快。
+
+### 3.2 同时保留的辅助口径
+
+CSV 还应记录：
 
 ```text
 global_step
-cum_x_function_evals
-cum_x_fo_evals
-cum_y_fo_evals
-cum_train_samples
+cum_train_forward_queries
+cum_x_function_queries
+cum_train_backward_calls
+cum_train_sample_forwards
+cum_train_sample_backwards
 train_wall_time_sec
+eval_forward_queries
 eval_wall_time_sec
 ```
 
-训练成本不要混入周期性 full-train evaluation 和 test evaluation。建议分别记录：
+其中：
 
-- `train_wall_time_sec`：只累计参数更新；
-- `total_wall_time_sec`：包含评估；
-- oracle 计数：只统计训练更新所使用的 oracle。
+```text
+cum_train_sample_forwards = 每次 forward 实际处理的样本数之和
+```
 
-### 4.3 现有 CLI 不能真正关闭某一侧 momentum
+因为 batch size 固定为 128，forward-call 曲线是主图，sample-forward 曲线用于审计。
 
-当前更新为：
+### 3.3 一阶和零阶不是完全等价的 oracle
+
+一次 FO forward+backward 与一次纯 function forward 的计算成本并不相同。因此 rebuttal 应同时给：
+
+1. Test AUC vs training forward queries；
+2. Test AUC vs wall-clock；
+3. forward / backward 次数表。
+
+正文按老师要求使用 forward 次数对齐，但不能省略 backward 和时间，否则仍可能被质疑隐藏反传成本。
+
+## 4. 开跑前必须修改的代码
+
+### 4.1 增加统一预算和计数器
+
+三个训练入口都增加：
+
+```text
+--max_train_forward_queries <Q>
+--eval_every_forward_queries <K>
+```
+
+不要再只用 `epochs` 控制正式实验。训练循环应在下一步会超过预算前停止，并把最后一个不超过预算的 checkpoint 写入日志。
+
+### 4.2 增加 x/y 动量独立开关
+
+当前 ZOFOSGDA 更新：
 
 ```python
 w  = (1 - beta_t)  * w  + beta_t  * w_hat
 vy = (1 - alpha_t) * vy + alpha_t * vy_hat
 ```
 
-不能简单用 `c1=0` 或 `c2=0` 表示“无 momentum”：
-
-- 设为 0 会冻结历史估计；
-- `beta_t=1` 才等于无 x-EMA，但当前 `beta_t=c2*eta_t` 随时间变化，无法通过一个固定 `c2` 保证恒为 1。
-
-建议增加明确开关：
+新增：
 
 ```text
 --x_momentum {on,off}
 --y_momentum {on,off}
 ```
 
-关闭时使用：
+关闭时必须直接更新：
 
 ```python
-w = w_hat
-vy = vy_hat
+if x_momentum == "off":
+    w = w_hat
+
+if y_momentum == "off":
+    vy = vy_hat
 ```
 
-### 4.4 ZO estimator 的代码与论文文字需要统一
+不能用 `c1=0/c2=0`：这会冻结旧估计，不是去掉动量。也不建议用一个固定 `c` 试图让 `alpha_t/beta_t=1`，因为 `eta_t` 随时间变化。
 
-论文 Eq. (7) 写的是 direction 从 unit ball 采样，但无偏公式通常对应 unit sphere。当前 AUC 代码：
+### 4.3 修正 TTGDA 的 batch size 问题
+
+`26.1.29.ZOFOGDA_AUC/ldx_ttgda_auc.py` 当前强制：
+
+```python
+N = len(train_ds)
+train_loader = DataLoader(train_ds, batch_size=N, ...)
+```
+
+所以命令行 `--batch_size 128` 实际只影响 test loader，训练是 full batch。这与论文“所有方法 batch size 128”不一致，也使 sample-query 无法公平比较。
+
+开跑前必须二选一：
+
+- 如果论文实验本意是 minibatch 128：修正 TTGDA 并全部重跑；
+- 如果算法定义要求 full batch：论文中明确披露，并主要使用 sample-forward 与 wall-clock 对齐。
+
+按老师“共同条件”理解，建议本次统一训练 batch size 128。
+
+### 4.4 固定评估时点
+
+不同 `M` 每一步消耗的 query 不同，不能按相同步数评估。建议公共评估点：
+
+```text
+Q_checkpoints = {0.05Q, 0.10Q, 0.20Q, 0.40Q, 0.60Q, 0.80Q, Q}
+```
+
+方法跨过 checkpoint 时，记录第一个达到或超过该点的模型，并同时记录真实 query 数；最终表使用不超过 `Q` 的最后结果。
+
+### 4.5 ZO direction 与论文统一
+
+当前代码使用归一化 Gaussian，即 unit sphere：
 
 ```python
 u = torch.randn(d)
 u = u / ||u||
 ```
 
-实际采的是 sphere，这与 reviewer 建议一致。应：
-
-- 保留 sphere 实现；
-- 在日志中记录 `direction_distribution=sphere`；
-- 论文公式和 Lemma 5.4 统一修正；
-- 不要把该问题写成“实验验证了无偏性”，它首先是数学定义问题。
-
-### 4.5 理论中的 `M` 与代码中的 `q` 不应混用
-
-论文 Eq. (7) 的 `M` 表示 batch 中样本/方向的平均数，方差界也写成随 `M` 衰减；当前代码则：
-
-- batch size 默认为 128；
-- 对同一个 minibatch 采 `q=5` 个方向；
-- 每个方向做正负两次 batched forward。
-
-因此必须在论文和回复中区分：
-
-- `B`：minibatch size；
-- `q`：每次 x-update 的随机方向数；
-- batched function evaluation 次数：`2q`；
-- sample-function evaluations：`2qB`。
-
----
-
-## 5. 实验设计
-
-### E0. 统一复现实验协议
-
-所有新增实验统一：
-
-- seeds：`{14, 42, 81}`；
-- preprocessing：同一个 train/test split，同一个 standardization；
-- architecture：同一个 one-hidden-layer ReLU MLP；
-- 默认 hidden size：128；
-- 默认 batch size：128；
-- 默认 `q=5`；
-- 默认 `delta=1e-3`（与现有主结果文件一致）；
-- 每项报告 mean ± std，最好同时报告 95% bootstrap CI；
-- 超参数选择只能使用验证集，不能按 test AUC 挑最好配置；
-- 同一比较中的各方法使用同一训练预算和相同 seed；
-- 保存完整 config、git/代码快照标识、GPU 型号、PyTorch/CUDA 版本。
-
-主数据集建议按维度分层：
-
-| 数据集 | 原始特征维度 | hidden=128 时约 `d1` | 角色 |
-|---|---:|---:|---|
-| Svmguide1 | 4 | 771 | 低维 |
-| Spambase | 56（论文表写 57，需核对索引口径） | 7,427 | 中维 |
-| A9a | 123 | 16,003 | 高维 |
-| Connect | 125（论文表写 126，需核对索引口径） | 16,259 | 额外高维验证 |
-
-这里的 `d1` 按当前 AUC primal 参数计算：
+论文 Eq. (7) 写 unit ball。实验实现建议保持 sphere，并在 config 中记录：
 
 ```text
-d1 = hidden * (D + 2) + 3
+direction_distribution = sphere
 ```
 
-注意：本地 LIBSVM 文件的最大特征索引与论文 Table 5 在 Climate/German/Spambase/Connect 上存在 1 的差异，应确认是否来自 0/1-based 统计或数据预处理版本。
+论文公式和 Lemma 5.4 由理论负责人同步修正。该问题不是靠实验能证明正确的。
 
-### E1. 公平的 query/oracle-cost 对比
+## 5. 正式实验矩阵
 
-**目的**：直接回答“按 iteration 比较不公平”。
+### E1. `M in {1,5,10,15}` 的影响
 
-方法：
-
-- TTGDA；
-- TTSGDA；
-- ZOFOSGDA；
-- 推荐增加 EMA-TTSGDA（或 EMA-TTGDA），回应“baseline 没有 momentum”。
-
-数据集：
-
-- 最小版：Svmguide1、Spambase、A9a；
-- 完整版：论文 Table 3 的全部六个数据集。
-
-每个方法至少画三种横轴：
-
-1. `cumulative processed training samples`；
-2. `cumulative x-oracle cost`；
-3. `training wall-clock seconds`。
-
-ZO 的成本同时报告两种定义，避免口径争论：
-
-```text
-batched x-function evaluations per update = 2q
-sample-function evaluations per update = 2qB
-```
-
-FO baseline 则报告：
-
-```text
-x first-order oracle calls per update = 1
-sample-gradient evaluations per update = B
-```
-
-不能把一次 FO backward 武断地等同为一次纯 function forward。最稳妥的呈现是把 ZO function queries、FO gradient queries 和 wall-clock 分列，并说明它们是不同 oracle。
-
-主要产出：
-
-- Test AUC vs sample-function/sample-gradient evaluations；
-- Test AUC vs wall-clock；
-- 达到某阈值 AUC 所需成本表；
-- 最终 AUC mean ± std 表。
-
-公平性检查：
-
-- 相同 batch size；
-- 相同模型初始化；
-- 相同数据顺序（可保存 sampler seed）；
-- 相同评估频率；
-- evaluation forward 不计入 training oracle；
-- wall-clock 预热 GPU 后再计时，并同步 CUDA。
-
-### E2. x/y momentum 独立消融
-
-**目的**：判断提升来自 hybrid oracle，还是来自某一侧 EMA。
-
-四个必要版本：
-
-| Variant | x EMA | y EMA |
-|---|---:|---:|
-| Full ZOFOSGDA | 开 | 开 |
-| No-x-momentum | 关：`w=w_hat` | 开 |
-| No-y-momentum | 开 | 关：`vy=vy_hat` |
-| No-momentum | 关 | 关 |
-
-建议数据集：
-
-- Svmguide1；
-- Spambase；
-- A9a。
+目的：回答方向数增加是否降低估计方差、提高性能，以及在相同 forward 预算下是否真的更划算。
 
 固定：
 
-- `q=5`；
-- `delta=1e-3`；
-- batch size 128；
-- seeds `{14,42,81}`；
-- 同一 query budget，而不是只用相同 epoch。
+```text
+M in {1,5,10,15}
+delta = 1e-4
+estimator = two-sided
+x_momentum = on
+y_momentum = on
+batch_size = 128
+seeds = {14,42,81}
+datasets = {svmguide1, spambase, a9a}
+```
+
+必须使用相同 `max_train_forward_queries=Q`。`Q` 应先通过 smoke test 确定，并对同一数据集的所有方法固定；命令模板中的 `100000` 只是示例，不是最终论文预算。不同 `M` 的允许步数自动变为：
+
+```text
+T_M = floor(Q / (2M+1))
+```
 
 报告：
 
-- 最终 test AUC；
-- best validation checkpoint 对应的 test AUC；
-- AUC vs query；
-- `||w_hat-w||`、`|vy_hat-vy|` 或 gradient-estimator variance proxy；
-- 三个 seed 的 mean ± std/CI。
+- Test AUC vs forward queries；
+- Test AUC vs wall-clock；
+- fixed-Q 最终 Test AUC mean ± std；
+- 达到指定 AUC 阈值所需 forward queries；
+- 可选：固定 checkpoint 重复采样 estimator，报告 variance proxy。
 
-最小运行数：
+运行数：
+
+```text
+3 datasets x 4 M values x 3 seeds = 36 runs
+```
+
+注意：原计划里的 `q={1,5,10,20}` 已改成老师明确要求的 `M={1,5,10,15}`。维度扩展实验降为非必要附加项，不占用 rebuttal 主预算。
+
+### E2. 零阶扰动消融
+
+“零阶扰动”可能指扰动半径，也可能指扰动估计形式。建议分两层，先完成 E2-A；若老师确认只需要 `delta`，E2-B 可放附录或不跑。
+
+#### E2-A. 扰动半径 `delta`
+
+固定 `M=5`，比较：
+
+```text
+delta in {1e-4, 3e-4, 1e-3, 3e-3, 1e-2}
+estimator = two-sided
+```
+
+其余条件与 E1 一致，仍使用相同总 forward 预算。
+
+报告：
+
+- final/best-validation Test AUC；
+- train objective；
+- gradient-estimator norm/variance proxy；
+- NaN、爆炸、过小差分 cancellation 等数值稳定性；
+- AUC vs log(delta) 折线图。
+
+运行数：
+
+```text
+3 datasets x 5 deltas x 3 seeds = 45 runs
+```
+
+其中 `delta=1e-3, M=5, Full momentum` 可以复用 E1 的对应结果，不重复跑。
+
+#### E2-B. 扰动形式
+
+建议比较：
+
+| Variant | x 更新 | 每步 x-forward |
+|---|---|---:|
+| Two-sided ZO | `(d/(2delta)) [f(x+delta*u)-f(x-delta*u)]u` | `2M` |
+| One-sided ZO | `(d/delta) [f(x+delta*u)-f(x)]u`，同一步共享 base `f(x)` | `M+1` |
+| Direct FO-x | autograd 直接取得 x 梯度/次梯度 | 与实现图复用有关，通常 1 |
+
+计入 y-gradient 后，预计总 forward：
+
+```text
+two-sided: 2M + 1
+one-sided: M + 2
+FO-x/FO-y joint graph: 1
+```
+
+必须在代码中按真实调用计数，不要只根据公式硬编码。如果 base forward 未共享，one-sided 会变成 `2M`，必须在日志中反映。
+
+E2-B 不是要证明 one-sided 一定更好，而是回答性能来自零阶扰动设计还是仅来自其他训练技巧。
+
+### E3. 分别去掉不同动量
+
+四个必要版本：
+
+| Variant | x EMA | y EMA | 关闭后的更新 |
+|---|---:|---:|---|
+| Full ZOFOSGDA | 开 | 开 | EMA |
+| No-x-momentum | 关 | 开 | `w=w_hat` |
+| No-y-momentum | 开 | 关 | `vy=vy_hat` |
+| No-momentum | 关 | 关 | 两侧都直接使用当前估计 |
+
+固定：
+
+```text
+M = 5
+delta = 1e-4
+estimator = two-sided
+batch_size = 128
+seeds = {14,42,81}
+datasets = {svmguide1, spambase, a9a}
+max_train_forward_queries = Q
+```
+
+四个版本每步 forward 成本相同，因此 query 曲线可直接比较，但仍必须由计数器停止，而不是跑相同 epoch。
+
+报告：
+
+- Test AUC vs forward queries；
+- Test AUC vs wall-clock；
+- fixed-Q mean ± std；
+- `||w_hat-w||`、`|vy_hat-vy|` 或 estimator variance proxy。
+
+运行数：
 
 ```text
 3 datasets x 4 variants x 3 seeds = 36 runs
 ```
 
-若时间非常紧，可以先只跑 Spambase 和 A9a，共 24 runs；但至少保留一个高维数据集。
+Full ZOFOSGDA 可复用 E1 中 `M=5` 的结果。
 
-### E3. `q` 与维度 `d1` 的实验
+### E4. 一阶 baseline 全部重跑
 
-**目的**：回答固定 `q=5` 在更高维是否退化，以及增大 `q` 的收益是否值得额外查询成本。
+必须重跑：
 
-建议分成两个子实验。
+- TTGDA；
+- TTSGDA。
 
-#### E3-A：跨数据集、固定模型宽度
+推荐附加：
 
-- datasets：Svmguide1、Spambase、A9a；
-- hidden：128；
-- `q in {1, 5, 10, 20}`；
-- `delta=1e-3`；
-- seeds `{14,42,81}`；
-- 固定总 function-query budget。
+- EMA-TTSGDA 或 EMA-TTGDA，用于回答“只有本文方法用了 momentum”的公平性质疑。
 
-这一实验易做，但数据集变化会引入任务难度混杂，因此不能单独作为“维度规律”的严格证据。
-
-#### E3-B：同一数据集内改变参数维度
-
-推荐 Svmguide1：
-
-| hidden | 约 `d1` | `ceil(sqrt(d1))` |
-|---:|---:|---:|
-| 16 | 99 | 10 |
-| 64 | 387 | 20 |
-| 128 | 771 | 28 |
-| 256 | 1,539 | 40 |
-
-每个维度比较：
-
-- 固定 `q=5`；
-- `q=ceil(sqrt(d1))`；
-- 可加 `q=1` 作为低成本端点。
-
-必须使用**固定 query budget**：当 `q` 增大时，允许的 optimization steps 按 `1/q` 缩短。否则大 `q` 只是花了更多计算，不能证明 query efficiency。
-
-报告：
-
-- AUC vs total function queries；
-- AUC vs wall-clock；
-- ZO estimator 的方差代理：
+统一条件：
 
 ```text
-mean_t ||g_hat_t - mean_r(g_hat_t^(r))||^2
+batch_size = 128
+seeds = {14,42,81}
+datasets = {svmguide1, spambase, a9a}
+max_train_forward_queries = Q
 ```
 
-可在固定 checkpoint 上重复采 20 次 estimator，仅用于测方差，不参与训练，并将这些诊断 queries 与训练 queries 分开统计。
+一阶方法不能继续使用旧的 `epochs=500` 结果作为主对照，因为：
 
-### E4. `delta` 敏感性
+- 旧日志没有 forward 计数；
+- TTGDA 当前可能实际使用 full batch；
+- 旧结果的评估时点与 ZO 的 query checkpoint 不一致。
 
-**目的**：回答 smoothing radius 是否敏感、实践中是否必须随目标精度变化。
-
-推荐：
+运行数：
 
 ```text
-delta in {1e-4, 3e-4, 1e-3, 3e-3, 1e-2}
-q = 5
-datasets = {Svmguide1, Spambase, A9a}
-seeds = {14, 42, 81}
+3 datasets x 2 FO methods x 3 seeds = 18 runs
 ```
 
-固定 query budget，报告：
+EMA baseline 若加入，再增加 9 runs。
 
-- final/best-validation test AUC；
-- train objective；
-- ZO estimator norm 与 variance proxy；
-- 数值稳定性（NaN、爆炸、过小差分导致的 cancellation）。
+### E5. 论文 Table 3 的补充结果
 
-建议画：
+老师指定的三组主实验完成后，再决定是否扩展到论文六个 AUC 数据集。当前旧结果仍可用于排查超参数，但不能替代同-query重跑。
 
-- x 轴为 log-scale `delta`，y 轴为最终 AUC；
-- 每个数据集一条曲线，误差条为 std/CI；
-- 另给 `delta` 与 estimator variance 的关系图。
+旧结果缺口：
 
-解释边界：
+- A9a：TTSGDA 缺 seed 42；ZOFOSGDA 缺 seed 81；
+- Ijcnn1：TTGDA 缺 seed 81；TTSGDA 缺 seed 14、81；ZOFOSGDA 缺 seed 81。
 
-- 实验只能说明有限范围内的鲁棒性；
-- 理论中设 `delta=O(epsilon)` 与实践固定 `delta` 不矛盾，但需要明确理论 target accuracy 和经验调参不是同一层面的声明；
-- 不要根据 test set 选择 `delta`。
+由于这次明确要求一阶也重跑，不建议只机械补这 6 个旧 run；应先在三个主数据集完成全套 query-fair 结果，再按时间扩展六数据集。
 
-### E5. 补齐 Table 3 与克制论文 claim
+论文 claim 同时需要降调：
 
-当前 `26.1.29.ZOFOGDA_AUC/result/` 中，论文六个 AUC 数据集的大部分三 seed 结果已经存在，但按主配置检查仍有缺口：
+- German：TTGDA 均值高于 ZOFOSGDA；
+- Spambase：ZOFOSGDA 与 TTSGDA 在报告精度下打平；
+- 不再使用“consistently outperforms”描述所有数据集。
 
-- A9a：
-  - TTSGDA 缺 seed 42；
-  - ZOFOSGDA 缺 seed 81。
-- Ijcnn1：
-  - TTGDA 缺 seed 81；
-  - TTSGDA 缺 seed 14、81；
-  - ZOFOSGDA 缺 seed 81。
+## 6. 推荐运行顺序
 
-至少需补 6 个 run，之后统一汇总。还需核对：
+### P0：代码准备与审计
 
-- Climate 当前有 500/1000/5000 epochs 混杂，最终表使用哪个预算；
-- German、Svmguide1、Spambase 有多组调参结果，必须固定 validation-based 选择规则；
-- A9a 有一条 `delta=1e-4, epochs=200` 的旧结果，不要与 `delta=1e-3, epochs=500` 混入同一组统计。
+1. 实现真实 forward/backward/sample 计数器；
+2. 实现 `max_train_forward_queries` 停止条件；
+3. 实现 x/y momentum 独立开关；
+4. 修正 TTGDA batch size；
+5. 对每个方法跑 `1 dataset x 1 seed x 2 epochs` smoke test；
+6. 手算并验证每步 query 增量。
 
-论文文字应改为：
+### P1：老师明确要求的主实验
 
-- German：承认 TTGDA 的均值高于 ZOFOSGDA；
-- Spambase：写“matches TTSGDA at reported precision”，不要写 consistently outperforms；
-- 使用 paired seeds 后可补置信区间，但不要仅凭均值做显著性结论。
+1. E1：`M={1,5,10,15}`；
+2. E3：四种 momentum variant；
+3. E4：TTGDA/TTSGDA 全部重跑；
+4. E2-A：`delta` 消融。
 
-### E6. Robust Classification 复核
+### P2：确认“零阶扰动”含义后执行
 
-早期 robust classification 实现在：
+1. E2-B：two-sided / one-sided / Direct FO-x；
+2. EMA 一阶 baseline；
+3. 扩展到论文全部六个 AUC 数据集；
+4. Robust Classification 对应实验。
 
-```text
-ZOFOGDA_GAN/zofoGDA.py
-ZOFOGDA_GAN/TTSGDA.py
-ZOFOGDA_GAN/TTGDA .py
-```
+当前不优先重跑 LLM meta-training，因为它没有直接回答老师列出的三项要求，GPU 成本也更高。
 
-目前仓库中只看到 Svmguide1/Splice 数据和少量旧 CSV，没有发现论文 Table 2 所需的 Australian、Breast-cancer、Ionosphere_scale 数据文件与完整运行脚本。因此：
+## 7. GPU 分配建议
 
-1. 先向合作者确认论文 Table 2 的原始代码、数据 split、超参数和 seed；
-2. 不要直接把 AUC 脚本当作 robust classification 脚本；
-3. 如果原始配置能恢复，至少在四个数据集上补 E1 和 E2；
-4. 如果不能及时恢复，rebuttal 实验重点放 AUC，并如实说明新实验在哪个任务上完成。
+若有 4 张 GPU，第一阶段：
 
-### E7. EMA baseline（推荐）
-
-为回答 M6Go 的“baseline 没有 momentum”，在 TTSGDA 或 TTGDA 外包一层与 ZOFOSGDA 同形式的 EMA：
-
-```text
-gx_ema = (1-beta) * gx_ema + beta * gx
-gy_ema = (1-alpha) * gy_ema + alpha * gy
-```
-
-比较：
-
-- 原始 TTSGDA；
-- EMA-TTSGDA；
-- ZOFOSGDA No-momentum；
-- Full ZOFOSGDA。
-
-这样能把两个因素拆开：
-
-- oracle 类型：FO vs ZO/FO hybrid；
-- momentum：无 vs EMA。
-
-如果 rebuttal 时间有限，只在 Spambase、A9a 上跑即可。
-
----
-
-## 6. 运行优先级与规模
-
-### P0：必须完成
-
-1. 修正 TTGDA batch/oracle 口径；
-2. 增加 query/sample/time 日志；
-3. 实现四种 momentum variant；
-4. 在 Svmguide1、Spambase、A9a 上跑 E2；
-5. 在同三数据集上重画 E1；
-6. 补齐 Table 3 缺失的 6 个 seed run。
-
-预计新增/重跑规模：
-
-- Momentum：36 runs；
-- 缺失主表：6 runs；
-- 若 E1 需要所有方法统一重跑：最多 `6 datasets x 3 methods x 3 seeds = 54 runs`，其中可与其他实验复用 Full ZOFOSGDA 结果。
-
-### P1：强烈建议
-
-1. E3：`q x d1`；
-2. E4：`delta`；
-3. E7：EMA baseline。
-
-建议先用单 seed 做筛查，再对最终选定矩阵补三 seeds。筛查结果不能直接进入主表。
-
-### P2：有余力再做
-
-- 将 E1/E2 扩展到 Robust Classification 四数据集；
-- 将 AUC 扩展到 Connect/Covtype/Acoustic；
-- 重跑 LLM meta-training。
-
-LLM 实验没有直接回应当前 reviewer 的核心质疑，GPU 成本又高，当前不建议优先。
-
----
-
-## 7. 建议的 GPU 排队方式
-
-若有 4 张 GPU：
-
-| GPU | 第一阶段 |
+| GPU | 任务 |
 |---|---|
-| 0 | Svmguide1 momentum variants |
-| 1 | Spambase momentum variants |
-| 2 | A9a momentum variants |
-| 3 | Table 3 缺失 seeds + smoke tests |
+| 0 | Svmguide1：M sweep + momentum |
+| 1 | Spambase：M sweep + momentum |
+| 2 | A9a：M sweep + momentum |
+| 3 | TTGDA/TTSGDA 重跑 + smoke tests |
 
 第二阶段：
 
 | GPU | 任务 |
 |---|---|
-| 0 | `q x d1` |
-| 1 | `delta` on Svmguide1 |
-| 2 | `delta` on Spambase |
-| 3 | `delta` on A9a / EMA baseline |
+| 0 | delta sweep on Svmguide1 |
+| 1 | delta sweep on Spambase |
+| 2 | delta sweep on A9a |
+| 3 | perturbation-form / EMA baseline |
 
-每个正式任务开跑前先做：
-
-```text
-1 dataset x 1 seed x 2 epochs
-```
-
-检查 CSV 是否包含 query/time 字段、各 variant 是否真的走不同分支、query 计数是否单调且符合手算。
-
----
+不要用 GPU 编号写死在公共脚本里；由启动脚本或调度器传入 `--device`。
 
 ## 8. 命令模板
 
-以下参数中的 momentum/query-budget 开关是建议新增的接口；当前代码尚不支持，不能原样直接跑。
+以下新参数需要先在代码中实现，模板目前不能直接运行。
 
-### 8.1 Full / momentum ablation
+### 8.1 M sweep
 
 ```bash
-cd /hy-tmp/LiuDongxu/26.1.29.ZOFOGDA_AUC
+cd /hy-tmp/ZOFOGDA_Nips26/26.1.29.ZOFOGDA_AUC
 
-python ldx_zofogda_auc.py \
-  --dataset spambase \
-  --data_dir ./data \
-  --log_dir ./rebuttal_results/E2/spambase/full/seed42 \
-  --epochs 500 \
-  --batch_size 128 \
-  --hidden 128 \
-  --eta_k 10 --eta_m 1000 --c1 3 --c2 3 \
-  --gamma 0.01 --lam 0.01 \
-  --zo_delta 1e-3 --zo_q 5 \
-  --x_momentum on --y_momentum on \
-  --seed 42 \
-  --device cuda:0
+for M in 1 5 10 15; do
+  python ldx_zofogda_auc.py \
+    --dataset spambase \
+    --data_dir ./data \
+    --log_dir "./rebuttal_results/E1_M/spambase/M${M}/seed42" \
+    --batch_size 128 --hidden 128 \
+    --eta_k 10 --eta_m 1000 --c1 3 --c2 3 \
+    --gamma 0.01 --lam 0.01 \
+    --zo_delta 1e-3 --zo_q "${M}" \
+    --x_momentum on --y_momentum on \
+    --max_train_forward_queries 100000 \
+    --eval_every_forward_queries 5000 \
+    --seed 42 --device cuda:0
+ done
 ```
 
-其余三种只改：
+### 8.2 Momentum 消融
 
 ```text
+Full:    --x_momentum on  --y_momentum on
 No-x:    --x_momentum off --y_momentum on
 No-y:    --x_momentum on  --y_momentum off
 No-both: --x_momentum off --y_momentum off
 ```
 
-### 8.2 `q` sweep
+共同使用：
 
-```bash
-for q in 1 5 10 20; do
-  python ldx_zofogda_auc.py \
-    --dataset a9a \
-    --data_dir ./data \
-    --log_dir "./rebuttal_results/E3/a9a/q${q}/seed42" \
-    --batch_size 128 --hidden 128 \
-    --zo_delta 1e-3 --zo_q "${q}" \
-    --max_x_function_evals 200000 \
-    --seed 42 --device cuda:0
-done
+```text
+--zo_q 5 --zo_delta 1e-3 --max_train_forward_queries 100000
 ```
 
-### 8.3 `delta` sweep
+### 8.3 Delta sweep
 
 ```bash
 for delta in 1e-4 3e-4 1e-3 3e-3 1e-2; do
   python ldx_zofogda_auc.py \
     --dataset spambase \
     --data_dir ./data \
-    --log_dir "./rebuttal_results/E4/spambase/delta${delta}/seed42" \
+    --log_dir "./rebuttal_results/E2_delta/spambase/delta${delta}/seed42" \
     --batch_size 128 --hidden 128 \
     --zo_delta "${delta}" --zo_q 5 \
-    --max_x_function_evals 200000 \
+    --x_momentum on --y_momentum on \
+    --max_train_forward_queries 100000 \
+    --eval_every_forward_queries 5000 \
     --seed 42 --device cuda:0
-done
+ done
 ```
 
----
+### 8.4 一阶 baseline
 
-## 9. 结果目录和命名规范
+TTGDA/TTSGDA 也必须支持：
 
-建议不要继续把所有 CSV 堆进现有 `result/`。使用：
+```text
+--max_train_forward_queries 100000
+--eval_every_forward_queries 5000
+--batch_size 128
+```
+
+不要把 `epochs` 当作不同方法之间的公平预算。
+
+## 9. 结果目录
 
 ```text
 rebuttal_results/
-  E1_query_cost/
-    <dataset>/<method>/seed_<seed>/
-  E2_momentum/
-    <dataset>/<variant>/seed_<seed>/
-  E3_q_dimension/
-    <dataset>/hidden_<h>/q_<q>/seed_<seed>/
-  E4_delta/
-    <dataset>/delta_<delta>/seed_<seed>/
-  E7_ema_baseline/
-    <dataset>/<method>/seed_<seed>/
+  E1_M/
+    <dataset>/M_<M>/seed_<seed>/
+  E2_perturbation/
+    <dataset>/delta_<delta>/<estimator>/seed_<seed>/
+  E3_momentum/
+    <dataset>/<full|no_x|no_y|no_both>/seed_<seed>/
+  E4_first_order/
+    <dataset>/<ttgda|ttsgda|ema_ttsgda>/seed_<seed>/
 ```
 
-每个运行目录至少保存：
+每个 run 至少保存：
 
 ```text
 metrics.csv
@@ -620,87 +545,92 @@ stdout.log
 environment.txt
 ```
 
-文件名不要再依赖浮点数拼接作为唯一标识；`config.json` 才是事实来源。
-
----
-
-## 10. 最终需要交给论文负责人的表和图
-
-### 主 rebuttal 图
-
-1. 三个数据集的 Test AUC vs cumulative oracle/sample cost；
-2. 三个数据集的 Test AUC vs wall-clock；
-3. Momentum 四版本消融图；
-4. `q` 在低/中/高维下的 fixed-budget 曲线；
-5. `delta` 敏感性折线图。
-
-### 主 rebuttal 表
-
-1. 公平预算下的 final AUC mean ± std；
-2. 达到目标 AUC 的 query/time；
-3. Full / No-x / No-y / No-both；
-4. Table 3 修正版；
-5. 若完成：原始 baseline vs EMA baseline。
-
-### 回复中建议使用的实验结论句式
-
-只有结果出来后再填数字：
+`metrics.csv` 必须包含：
 
 ```text
-At an equal budget of [Q] x-function evaluations, ZOFOSGDA reaches [AUC],
-compared with [...] for the baselines. We additionally report wall-clock and
-sample-oracle costs because zeroth- and first-order oracle calls are not directly
-equivalent.
+global_step
+train_loss
+test_auc
+cum_train_forward_queries
+cum_x_function_queries
+cum_train_backward_calls
+cum_train_sample_forwards
+train_wall_time_sec
+eval_forward_queries
+```
+
+## 10. 最终交付的表和图
+
+### 主图
+
+1. `M={1,5,10,15}`：Test AUC vs forward queries；
+2. Full / No-x / No-y / No-both：Test AUC vs forward queries；
+3. ZOFOSGDA 与重跑 TTGDA/TTSGDA：Test AUC vs forward queries；
+4. 同样三组比较的 Test AUC vs wall-clock；
+5. delta 敏感性图；
+6. 若执行 E2-B：不同扰动形式的 fixed-query 曲线。
+
+### 主表
+
+1. 相同 forward budget `Q` 下的最终 AUC mean ± std；
+2. 达到目标 AUC 所需 forward queries 和 wall-clock；
+3. 每个方法的 forward/backward/sample-forward 总数；
+4. Momentum 四版本消融；
+5. M sweep 和 delta sweep。
+
+### 结果解释模板
+
+结果出来后再填数字：
+
+```text
+Under the same budget of Q training forward evaluations, M=1/5/10/15 obtains
+[...]. Increasing M reduces the number of optimization steps from [...] to [...],
+so its variance reduction is evaluated under the actual query trade-off.
 ```
 
 ```text
-Removing x-EMA / y-EMA changes the mean AUC from [...] to [...] / [...],
-while removing both gives [...]. This shows that [结论以实际结果为准],
-rather than attributing all gains to momentum without evidence.
+Removing x-EMA / y-EMA changes the fixed-query AUC from [...] to [...] / [...],
+while removing both gives [...]. The no-momentum variants directly use the current
+gradient estimates rather than freezing historical estimates.
 ```
 
 ```text
-With q fixed at 5, performance [保持稳定/下降] as d1 grows from [...] to [...].
-Increasing q reduces the estimator-variance proxy by [...], but under an equal
-query budget the gain is [...], revealing the actual cost-quality trade-off.
+At the same number of training forward evaluations, ZOFOSGDA reaches [...],
+compared with [...] for TTGDA and [...] for TTSGDA. We additionally report
+backward calls and wall-clock because a first-order oracle is not computationally
+identical to a function-value query.
 ```
 
----
+## 11. 开跑检查清单
 
-## 11. 不属于“跑实验”的并行事项
+- [ ] 向老师确认 `M` 是随机方向数而不是 minibatch size；
+- [ ] 向老师确认“零阶扰动”是否仅指 `delta`；
+- [ ] 三个方法统一 batch size 128；
+- [ ] TTGDA 不再静默强制 full batch；
+- [ ] 新增真实 forward/backward/sample 计数；
+- [ ] 新增 fixed-forward-budget 停止条件；
+- [ ] evaluation query 与 training query 分开；
+- [ ] 新增 x/y momentum 独立开关；
+- [ ] 验证 No-x/No-y 使用直接当前梯度，而不是 `c=0`；
+- [ ] 验证 two-sided 每步总 forward 约为 `2M+1`；
+- [ ] 验证一阶共同反传每步 forward 约为 1；
+- [ ] M 严格使用 `{1,5,10,15}`；
+- [ ] seeds 使用 `{14,42,81}`；
+- [ ] 超参数只用 validation 选择；
+- [ ] 画 query 和 wall-clock 两套曲线；
+- [ ] 汇总 mean ± std，并核对论文 claim。
 
-必须提醒老板/理论负责人：以下问题决定 rebuttal 是否成立，但不能靠实验覆盖。
+## 12. 实验之外的并行理论事项
+
+以下问题仍需理论负责人处理，不能靠新增实验覆盖：
 
 1. Eq. (7) 的 ball/sphere 与 Lemma 5.4 无偏性；
-2. Lemma B.1 中 `argmax E[f]` 与单个 perturbation 后 `argmax f` 的错误等式；
+2. Lemma B.1 中 `argmax E[f]` 与单次 perturbation 后 `argmax f` 的等式；
 3. Eqs. (40)、(44)、(48) 及主定理对 Lemma B.1 的依赖；
-4. “matches best-known rate” 的错误/过强表述；
+4. “matches best-known rate”的过强表述；
 5. 与 arXiv:2604.21371 的 stationarity、assumption 和 rate 对比；
-6. GFM 引用编号错误；
-7. ZOFOSGDA / ZOFOGDA 命名不一致；
-8. Limitations checklist 中 `[TODO]`；
-9. German/Spambase 的实验 claim 降调。
+6. GFM 引用编号、ZOFOSGDA/ZOFOGDA 命名和 Limitations checklist。
 
-如果理论主结果无法在 rebuttal 时限内修复，实验再多也无法消除 Meta Review 的核心否定意见。实验工作应以“补齐公平性证据、为后续重投留下可信结果”为目标，避免为了赶时间扩大不必要的实验面。
+## 12. 已落地的自动化实验系统
 
----
-
-## 12. 开跑检查清单
-
-- [ ] 确认理论负责人决定 sphere/ball 的最终版本；
-- [ ] 确认 TTGDA 应为 full batch 还是 minibatch；
-- [ ] 三个方法的数据 split、standardization、模型完全一致；
-- [ ] 新增 x/y momentum 独立开关；
-- [ ] 新增 function/FO/sample query 计数；
-- [ ] 新增纯训练 wall-clock；
-- [ ] 新增 fixed-query-budget 停止条件；
-- [ ] 先跑 2-epoch smoke test；
-- [ ] 验证 `q=5` 时每个 x-update 增加 `2q=10` 个 batched function evals；
-- [ ] 验证 No-x/No-y 分支不是通过 `c=0` 实现；
-- [ ] seeds 固定为 14、42、81；
-- [ ] 超参数选择不看 test set；
-- [ ] 补齐 A9a/Ijcnn1 缺失 seed；
-- [ ] 汇总 mean/std/CI；
-- [ ] 重画 query、sample、time 三种横轴；
-- [ ] 论文 claim 与实际表格逐句核对。
-
+完整实现位于 `rebuttal/`，使用说明见 `rebuttal/README.md`。当前矩阵包含 1,082 个去重后的 run，按六个 phase 排序并均衡分配至 8 张 GPU。结果 Excel、原始曲线和 mean±std 图片由聚合脚本持续刷新。主默认值已对齐现有论文代码：AUC 为 `gamma=lambda=0.01`，稳健分类为 `gamma=lambda=1`，默认 `delta=1e-4`。

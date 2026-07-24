@@ -13,3 +13,8 @@ wandb/
 /ZOFOGDA_GAN/data/cifar-10-python.tar.gz
 /ZOFOGDA_GAN/data/cifar-100-python.tar.gz
 /ZOFOGDA_GAN/data/cifar-100-python/train
+
+# Rebuttal runtime artifacts (generated; source tables/configs remain tracked)
+/rebuttal/results/
+/rebuttal/logs/
+/rebuttal/plots/
