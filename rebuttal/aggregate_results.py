@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 REB = ROOT / "rebuttal"
 REGISTRY = REB / "tables" / "experiment_registry.csv"
 WORKBOOK = REB / "tables" / "rebuttal_experiment_results.xlsx"
+SIMPLE_WORKBOOK = REB / "tables" / "rebuttal_results_simple.xlsx"
 PLOTS = REB / "plots"
 
 
@@ -197,13 +198,123 @@ def write_excel(registry, raw, curves, summary):
     wb.save(WORKBOOK)
 
 
+
+def method_name(method):
+    return {"zofo": "ZOFOSGDA", "ttgda": "TTGDA", "ttsgda": "TTSGDA"}.get(str(method), str(method))
+
+
+def simple_result_workbook(raw):
+    """Write the six-column, teacher-facing result table."""
+    columns = ["数据集", "方法", "消融变量", "对应的值", "所做任务", "结果"]
+    if raw.empty:
+        simple = pd.DataFrame(columns=columns)
+    else:
+        x = explode_groups(raw)
+        specs = {
+            "main_comparison": ("方法对比", ["method"]),
+            "M_sweep": ("M", ["method", "M"]),
+            "delta_sweep": ("扰动半径 delta", ["method", "delta"]),
+            "momentum": ("动量", ["method", "x_momentum", "y_momentum"]),
+            "perturbation_form": ("零阶扰动形式", ["method", "estimator"]),
+            "direction_ablation": ("扰动方向分布", ["method", "direction_distribution"]),
+            "coefficient_batch": ("c1=c2 / batch size", ["method", "c1", "c2", "batch_size"]),
+            "dimension": ("隐藏层维度", ["method", "hidden"]),
+            "M_delta_interaction": ("M / delta", ["method", "M", "delta"]),
+            "M_momentum_interaction": ("M / 动量", ["method", "M", "x_momentum", "y_momentum"]),
+            "fo_lr_sweep": ("一阶学习率 lr_x / lr_y", ["method", "lr_x", "lr_y"]),
+        }
+        rows = []
+        for group, (variable, variant_keys) in specs.items():
+            part = x[x["experiment_group"] == group].copy()
+            if part.empty:
+                continue
+            keys = ["task", "dataset"] + variant_keys
+            for key_values, g in part.groupby(keys, dropna=False, sort=True):
+                if not isinstance(key_values, tuple):
+                    key_values = (key_values,)
+                values = dict(zip(keys, key_values))
+                method = values.get("method", "zofo")
+                if group == "main_comparison":
+                    value = method_name(method)
+                elif group == "M_sweep":
+                    value = f"M={int(values['M'])}"
+                elif group == "delta_sweep":
+                    value = f"delta={float(values['delta']):g}"
+                elif group == "momentum":
+                    value = momentum_label(values)
+                elif group == "perturbation_form":
+                    value = str(values["estimator"])
+                elif group == "direction_ablation":
+                    value = str(values["direction_distribution"])
+                elif group == "coefficient_batch":
+                    value = f"c={float(values['c1']):g}, batch={int(values['batch_size'])}"
+                elif group == "dimension":
+                    value = f"hidden={int(values['hidden'])}"
+                elif group == "M_delta_interaction":
+                    value = f"M={int(values['M'])}, delta={float(values['delta']):g}"
+                elif group == "M_momentum_interaction":
+                    value = f"M={int(values['M'])}, {momentum_label(values)}"
+                else:
+                    value = f"lr_x={float(values['lr_x']):g}, lr_y={float(values['lr_y']):g}"
+
+                completed = pd.to_numeric(
+                    g.loc[g["status"] == "completed", "final_test_metric"], errors="coerce"
+                ).dropna()
+                n_done, n_total = len(completed), len(g)
+                if n_done == n_total and n_done > 1:
+                    result = f"{completed.mean():.4f} ± {completed.std(ddof=1):.4f}"
+                elif n_done == n_total == 1:
+                    result = f"{completed.iloc[0]:.4f}"
+                elif n_done:
+                    result = f"当前 {completed.mean():.4f}（{n_done}/{n_total}）"
+                else:
+                    running = int((g["status"] == "running").sum())
+                    result = f"运行中（0/{n_total}）" if running else f"待运行（0/{n_total}）"
+                rows.append({
+                    "数据集": values["dataset"],
+                    "方法": method_name(method),
+                    "消融变量": variable,
+                    "对应的值": value,
+                    "所做任务": "AUC 最大化" if values["task"] == "auc" else "稳健分类",
+                    "结果": result,
+                })
+        simple = pd.DataFrame(rows, columns=columns).sort_values(
+            ["所做任务", "数据集", "消融变量", "方法", "对应的值"]
+        )
+
+    with pd.ExcelWriter(SIMPLE_WORKBOOK, engine="openpyxl") as writer:
+        simple.to_excel(writer, sheet_name="实验结果简表", index=False)
+    wb = load_workbook(SIMPLE_WORKBOOK)
+    ws = wb["实验结果简表"]
+    ws.freeze_panes = "A2"
+    ws.auto_filter.ref = ws.dimensions
+    header_fill = PatternFill("solid", fgColor="1F4E78")
+    for cell in ws[1]:
+        cell.fill = header_fill
+        cell.font = Font(color="FFFFFF", bold=True)
+        cell.alignment = Alignment(horizontal="center")
+    widths = {"A": 20, "B": 16, "C": 24, "D": 32, "E": 16, "F": 24}
+    for col, width in widths.items():
+        ws.column_dimensions[col].width = width
+    for row in ws.iter_rows(min_row=2):
+        for cell in row:
+            cell.alignment = Alignment(vertical="center")
+        if str(row[5].value).startswith("待运行"):
+            row[5].fill = PatternFill("solid", fgColor="D9EAF7")
+        elif str(row[5].value).startswith("运行中") or str(row[5].value).startswith("当前"):
+            row[5].fill = PatternFill("solid", fgColor="FFF2CC")
+        else:
+            row[5].fill = PatternFill("solid", fgColor="C6EFCE")
+    wb.save(SIMPLE_WORKBOOK)
+
 def refresh():
     registry, raw, curves = collect()
     summary = summarize(raw)
     write_excel(registry, raw, curves, summary)
+    simple_result_workbook(raw)
     make_plots(curves)
     counts = registry["status"].value_counts().to_dict()
-    print(time.strftime("%F %T"), counts, "->", WORKBOOK, flush=True)
+    print(time.strftime("%F %T"), counts, "->", WORKBOOK, SIMPLE_WORKBOOK, flush=True)
 
 
 def main():

@@ -37,6 +37,7 @@
 - `test_query_accounting.py`：CPU 快速回归测试，验证 three estimator 的实际 query 数。
 - `tables/experiment_registry.csv`：1,082 个 run 的唯一注册表。
 - `tables/rebuttal_experiment_results.xlsx`：自动刷新的结果记录工作簿。
+- `tables/rebuttal_results_simple.xlsx`：老师版六列结果简表（推荐直接查看）。
 - `plots/<group>/`：按实验组、任务、数据集生成的 mean±std PNG。
 
 ## 常用命令
