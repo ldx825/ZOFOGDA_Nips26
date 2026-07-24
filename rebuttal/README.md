@@ -38,6 +38,7 @@
 - `tables/experiment_registry.csv`：1,082 个 run 的唯一注册表。
 - `tables/rebuttal_experiment_results.xlsx`：自动刷新的结果记录工作簿。
 - `tables/rebuttal_results_simple.xlsx`：老师版六列结果简表；每个实验条件按 ZOFOSGDA/TTGDA/TTSGDA 连续三行排列（推荐直接查看）。
+- `tables/rebuttal_results_simple_previous.xlsx`：上一版单工作表六列简表，同样自动刷新。
 - `plots/<group>/`：按实验组、任务、数据集生成的 mean±std PNG。
 
 ## 常用命令

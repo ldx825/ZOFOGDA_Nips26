@@ -20,6 +20,7 @@ REB = ROOT / "rebuttal"
 REGISTRY = REB / "tables" / "experiment_registry.csv"
 WORKBOOK = REB / "tables" / "rebuttal_experiment_results.xlsx"
 SIMPLE_WORKBOOK = REB / "tables" / "rebuttal_results_simple.xlsx"
+SIMPLE_PREVIOUS_WORKBOOK = REB / "tables" / "rebuttal_results_simple_previous.xlsx"
 PLOTS = REB / "plots"
 
 
@@ -203,6 +204,37 @@ def method_name(method):
     return {"zofo": "ZOFOSGDA", "ttgda": "TTGDA", "ttsgda": "TTSGDA"}.get(str(method), str(method))
 
 
+
+def write_previous_simple_workbook(simple):
+    """Keep the original one-sheet six-column layout requested by the user."""
+    flat = simple.copy()
+    if not flat.empty:
+        flat = flat.sort_values(["所做任务", "数据集", "消融变量", "方法", "对应的值"])
+    with pd.ExcelWriter(SIMPLE_PREVIOUS_WORKBOOK, engine="openpyxl") as writer:
+        flat.to_excel(writer, sheet_name="实验结果简表", index=False)
+    wb = load_workbook(SIMPLE_PREVIOUS_WORKBOOK)
+    ws = wb["实验结果简表"]
+    ws.freeze_panes = "A2"
+    ws.auto_filter.ref = ws.dimensions
+    header_fill = PatternFill("solid", fgColor="1F4E78")
+    for cell in ws[1]:
+        cell.fill = header_fill
+        cell.font = Font(color="FFFFFF", bold=True)
+        cell.alignment = Alignment(horizontal="center")
+    for col, width in {"A": 20, "B": 16, "C": 24, "D": 32, "E": 16, "F": 24}.items():
+        ws.column_dimensions[col].width = width
+    for row in ws.iter_rows(min_row=2):
+        for cell in row:
+            cell.alignment = Alignment(vertical="center")
+        text = str(row[5].value)
+        if text.startswith("待运行"):
+            row[5].fill = PatternFill("solid", fgColor="D9EAF7")
+        elif text.startswith("运行中") or text.startswith("当前"):
+            row[5].fill = PatternFill("solid", fgColor="FFF2CC")
+        else:
+            row[5].fill = PatternFill("solid", fgColor="C6EFCE")
+    wb.save(SIMPLE_PREVIOUS_WORKBOOK)
+
 def simple_result_workbook(raw):
     """Write the six-column, teacher-facing result table."""
     columns = ["数据集", "方法", "消融变量", "对应的值", "所做任务", "结果"]
@@ -279,6 +311,8 @@ def simple_result_workbook(raw):
                     "结果": result,
                 })
         simple = pd.DataFrame(rows, columns=columns)
+
+    write_previous_simple_workbook(simple)
 
     method_order = {"ZOFOSGDA": 0, "TTGDA": 1, "TTSGDA": 2}
     methods = list(method_order)
@@ -362,7 +396,7 @@ def refresh():
     simple_result_workbook(raw)
     make_plots(curves)
     counts = registry["status"].value_counts().to_dict()
-    print(time.strftime("%F %T"), counts, "->", WORKBOOK, SIMPLE_WORKBOOK, flush=True)
+    print(time.strftime("%F %T"), counts, "->", WORKBOOK, SIMPLE_WORKBOOK, SIMPLE_PREVIOUS_WORKBOOK, flush=True)
 
 
 def main():
