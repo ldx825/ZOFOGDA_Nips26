@@ -26,6 +26,15 @@ DATASETS = ["climate", "german", "svmguide1", "spambase", "a9a", "ijcnn1"]
 SEEDS = [14, 42, 81]
 EPOCHS = 500
 BATCH_SIZE = 128
+FEATURE_DIMS = {
+    "climate": 20,
+    "german": 24,
+    "svmguide1": 4,
+    "spambase": 57,
+    "a9a": 123,
+    "ijcnn1": 22,
+}
+SQRT_D_M = {dataset: math.isqrt(dim) for dataset, dim in FEATURE_DIMS.items()}
 ZO_STEP = {
     "climate": (0.01, 0.01),
     "german": (0.005, 0.005),
@@ -70,7 +79,16 @@ def dataset_sizes():
         test = AUC_DIR / "data" / f"{d}.t"
         xtr, _ = load_svmlight_file(train)
         xte, _ = load_svmlight_file(test)
-        sizes[d] = {"train": int(xtr.shape[0]), "test": int(xte.shape[0])}
+        feature_dim = int(xtr.shape[1])
+        if feature_dim != FEATURE_DIMS[d]:
+            raise RuntimeError(
+                f"{d}: expected {FEATURE_DIMS[d]} input features, got {feature_dim}"
+            )
+        sizes[d] = {
+            "train": int(xtr.shape[0]),
+            "test": int(xte.shape[0]),
+            "features": feature_dim,
+        }
     return sizes
 
 
@@ -106,7 +124,40 @@ def make_run(method, dataset, experiment, value, seed, sizes, **kwargs):
 def build(force=False):
     if MANIFEST.exists() and not force:
         runs = json.loads(MANIFEST.read_text(encoding="utf-8"))
-        print(f"Manifest already exists: {len(runs)} runs")
+        existing_ids = {r["run_id"] for r in runs}
+        sizes = dataset_sizes()
+        additions = []
+        for d in DATASETS:
+            gx, gy = ZO_STEP[d]
+            q = SQRT_D_M[d]
+            for seed in SEEDS:
+                r = make_run("ZOFOSGDA", d, "M", q, seed, sizes,
+                             q=q, delta=0.001, gamma=gx, lam=gy)
+                if r["run_id"] not in existing_ids:
+                    additions.append(r)
+        if additions:
+            # Preserve completed runs' GPU assignments and balance only new jobs.
+            loads = [0] * 8
+            for r in sorted(additions, key=lambda x: x["estimated_cost"], reverse=True):
+                gpu = min(range(8), key=lambda i: loads[i])
+                r["gpu"] = gpu
+                loads[gpu] += r["estimated_cost"]
+            runs.extend(additions)
+            atomic_json(MANIFEST, runs)
+            for gpu in range(8):
+                atomic_json(QUEUES_DIR / f"gpu{gpu}.json",
+                            [r for r in runs if r["gpu"] == gpu])
+            fields = ["run_id", "gpu", "dataset", "method", "experiment", "value", "seed",
+                      "epochs", "batch_size", "q", "delta", "x_momentum", "y_momentum",
+                      "lr_x", "lr_y", "gamma", "lam", "n_train", "n_test", "estimated_cost"]
+            with open(REGISTRY, "w", newline="", encoding="utf-8-sig") as f:
+                w = csv.DictWriter(f, fieldnames=fields, lineterminator="\n")
+                w.writeheader()
+                for r in runs:
+                    w.writerow({k: r.get(k) for k in fields})
+            print(f"Added {len(additions)} sqrt(d) runs; total={len(runs)}")
+        else:
+            print(f"Manifest already exists: {len(runs)} runs")
         return runs
     sizes = dataset_sizes()
     runs = []
@@ -119,7 +170,7 @@ def build(force=False):
             runs.append(make_run("TTSGDA", d, "baseline", "paper", seed, sizes, lr_x=sx, lr_y=sy))
             runs.append(make_run("ZOFOSGDA", d, "baseline", "paper", seed, sizes,
                                  q=5, delta=0.001, gamma=gx, lam=gy))
-            for q in [1, 10, 15]:
+            for q in [1, 10, 15, SQRT_D_M[d]]:
                 runs.append(make_run("ZOFOSGDA", d, "M", q, seed, sizes,
                                      q=q, delta=0.001, gamma=gx, lam=gy))
             for delta in [0.0001, 0.01]:
@@ -130,8 +181,8 @@ def build(force=False):
                 runs.append(make_run("ZOFOSGDA", d, "momentum", label, seed, sizes,
                                      q=5, delta=0.001, x_momentum=xm,
                                      y_momentum=ym, gamma=gx, lam=gy))
-    assert len(runs) == 198, len(runs)
-    assert len({r["run_id"] for r in runs}) == 198
+    assert len(runs) == 216, len(runs)
+    assert len({r["run_id"] for r in runs}) == 216
 
     # Greedy cost balancing, with expensive jobs first.
     queues = [[] for _ in range(8)]
@@ -421,7 +472,9 @@ def refresh():
     states = {r["run_id"]: load_state(r) for r in runs}
 
     def get_run(dataset, method, experiment, value, seed):
-        if experiment == "M" and str(value) == "5":
+        if experiment == "M" and str(value) == "sqrt_d":
+            value = SQRT_D_M[dataset]
+        elif experiment == "M" and str(value) == "5":
             experiment, value = "baseline", "paper"
         elif experiment == "delta" and str(value) in {"0.001", "1e-3"}:
             experiment, value = "baseline", "paper"
@@ -468,6 +521,7 @@ def refresh():
         ("ZOFOGDA-M=1", "ZOFOSGDA", "M", 1),
         ("ZOFOGDA-M=10", "ZOFOSGDA", "M", 10),
         ("ZOFOGDA-M=15", "ZOFOSGDA", "M", 15),
+        ("ZOFOGDA-M=floor(sqrt(d))", "ZOFOSGDA", "M", "sqrt_d"),
         ("ZOFOGDA-delta=1e-4", "ZOFOSGDA", "delta", 0.0001),
         ("ZOFOGDA-delta=1e-2", "ZOFOSGDA", "delta", 0.01),
         ("ZOFOGDA-no-x", "ZOFOSGDA", "momentum", "no_x"),
@@ -519,9 +573,10 @@ def refresh():
         for cell in row:
             cell.number_format = "0.000000"
             cell.alignment = Alignment(horizontal="center")
-    ws["A16"] = "说明：方差使用3个seed的总体方差（ddof=0）；论文常见的 mean±std 可直接使用下一张表。"
-    ws.merge_cells("A16:M16")
-    ws["A16"].font = Font(italic=True, color="666666")
+    note_row = 4 + len(main_specs)
+    ws.cell(note_row, 1, "说明：方差使用3个seed的总体方差（ddof=0）；论文常见的 mean±std 可直接使用下一张表。")
+    ws.merge_cells(start_row=note_row, start_column=1, end_row=note_row, end_column=13)
+    ws.cell(note_row, 1).font = Font(italic=True, color="666666")
 
     ws = wb.create_sheet("主表_mean±std", 1)
     setup(ws, ["方法"] + [d.capitalize() for d in DATASETS])
@@ -558,7 +613,7 @@ def refresh():
     ws = wb.create_sheet("消融结果")
     setup(ws,["数据集","方法","消融变量","对应值","所做任务","结果（Final AUC）","Best AUC",
               "完成种子","平均运行时间(min)","平均Sample Queries","状态/来源"])
-    conditions = [("M",v) for v in [1,5,10,15]] + [("delta",v) for v in [0.0001,0.001,0.01]] + [("momentum",v) for v in ["full","no_x","no_y","no_both"]]
+    conditions = [("M",v) for v in [1,5,10,15,"sqrt_d"]] + [("delta",v) for v in [0.0001,0.001,0.01]] + [("momentum",v) for v in ["full","no_x","no_y","no_both"]]
     for d in DATASETS:
         for exp,val in conditions:
             vals=[]; best=[]; times=[]; queries=[]; sources=[]
@@ -570,7 +625,9 @@ def refresh():
                 if s.get("train_sample_function_queries") is not None: queries.append(int(s["train_sample_function_queries"]))
             result=f"{statistics.mean(vals):.4f} ± {statistics.pstdev(vals):.4f}" if vals else ""
             best_text=f"{statistics.mean(best):.4f} ± {statistics.pstdev(best):.4f}" if best else ""
-            ws.append([d,"ZOFOSGDA",exp,str(val),"AUC最大化",result,best_text,f"{len(vals)}/3",
+            shown_value = (f"floor(sqrt({FEATURE_DIMS[d]}))={SQRT_D_M[d]}"
+                           if exp == "M" and val == "sqrt_d" else str(val))
+            ws.append([d,"ZOFOSGDA",exp,shown_value,"AUC最大化",result,best_text,f"{len(vals)}/3",
                        round(statistics.mean(times),2) if times else "",round(statistics.mean(queries)) if queries else "",
                        "/".join(sorted(set(sources))) if sources else "等待运行"])
     finish(ws,{"A":15,"B":14,"C":15,"D":15,"E":16,"F":22,"G":22,"H":12,"I":20,"J":22,"K":18})
@@ -637,7 +694,7 @@ def reporter():
     while True:
         status=refresh()
         terminal=status.get("completed",0)+status.get("failed",0)
-        if terminal>=198:
+        if terminal>=len(build()):
             break
         time.sleep(120)
 

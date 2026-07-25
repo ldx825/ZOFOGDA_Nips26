@@ -29,8 +29,17 @@ wandb/
 /rebuttal_auc_original/historical_unverified/
 /rebuttal_auc_original/plots/
 /rebuttal_auc_original/*.tmp.xlsx
+# Locally frozen/stale workbook copies; the canonical tracked workbook is
+# rebuttal_auc_original/AUC_rebuttal_results.xlsx.
+/rebuttal_auc_original/*_FINAL.xlsx
+~$*.xlsx
 
 # Common local process/editor artifacts
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.idea/
+.vscode/
 *.log
 *.pid
 *.swp

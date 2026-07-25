@@ -16,6 +16,7 @@ import manage
 
 COLORS = {"TTGDA": "#2ca02c", "TTSGDA": "#2345ff", "ZOFOSGDA": "#ff2d2d",
           "M=1": "#1f77b4", "M=5": "#ff7f0e", "M=10": "#2ca02c", "M=15": "#d62728",
+          "M=floor(sqrt(d))": "#9467bd",
           "delta=0.0001": "#1f77b4", "delta=0.001": "#ff2d2d", "delta=0.01": "#2ca02c",
           "full": "#ff2d2d", "no-x": "#1f77b4", "no-y": "#2ca02c", "no-both": "#9467bd"}
 
@@ -34,7 +35,8 @@ def manifest_lookup():
 
 
 def resolve_key(lookup,dataset,method,experiment,value,seed):
-    if experiment=="M" and str(value)=="5": experiment,value="baseline","paper"
+    if experiment=="M" and str(value)=="sqrt_d": value=manage.SQRT_D_M[dataset]
+    elif experiment=="M" and str(value)=="5": experiment,value="baseline","paper"
     if experiment=="delta" and str(value) in {"0.001","1e-3"}: experiment,value="baseline","paper"
     if experiment=="momentum" and value=="full": experiment,value="baseline","paper"
     return lookup[(dataset,method,experiment,str(value),seed)]
@@ -69,7 +71,8 @@ def specs(comparison):
     if comparison=="baseline":
         return [(m,m,"baseline","paper") for m in ["TTGDA","TTSGDA","ZOFOSGDA"]]
     if comparison=="M":
-        return [(f"M={v}","ZOFOSGDA","M",v) for v in [1,5,10,15]]
+        fixed=[(f"M={v}","ZOFOSGDA","M",v) for v in [1,5,10,15]]
+        return fixed+[("M=floor(sqrt(d))","ZOFOSGDA","M","sqrt_d")]
     if comparison=="delta":
         return [(f"delta={v}","ZOFOSGDA","delta",v) for v in [0.0001,0.001,0.01]]
     return [(label,"ZOFOSGDA","momentum",value) for label,value in

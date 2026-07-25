@@ -6,7 +6,7 @@ This directory runs only the AUC experiments through the paper's three independe
 - `26.1.29.ZOFOGDA_AUC/ldx_ttgda_auc.py`
 - `26.1.29.ZOFOGDA_AUC/ldx_ttsgda_auc.py`
 
-The formal matrix has 198 unique runs: six datasets, seeds 14/42/81, 500 epochs, original-configuration baselines, `M={1,5,10,15}`, `delta={1e-4,1e-3,1e-2}`, and full/no-x/no-y/no-both momentum. Baseline conditions are deduplicated.
+The formal matrix has 216 unique runs: six datasets, seeds 14/42/81, 500 epochs, original-configuration baselines, `M={1,5,10,15,floor(sqrt(d))}`, `delta={1e-4,1e-3,1e-2}`, and full/no-x/no-y/no-both momentum. Here `d` is the loaded input feature dimension. Baseline conditions are deduplicated.
 
 Each worker waits for an empty assigned GPU. During training it audits the number of GPU compute contexts once per second; if another context appears, the run is terminated and restarted from epoch 1. Each successful run has an original training CSV, `epoch_times.csv`, `gpu_audit_attempt*.csv`, and `summary.json`.
 
@@ -28,4 +28,4 @@ python rebuttal_auc_original/plot_results.py --comparison M --xaxis query
 python rebuttal_auc_original/plot_results.py --comparison momentum --xaxis epoch
 ```
 
-Runtime artifacts are excluded from Git while jobs are active. Add completed results in a separate, immutable results commit after all 198 runs finish.
+Runtime artifacts are excluded from Git while jobs are active. Add completed results in a separate, immutable results commit after all 216 runs finish.
