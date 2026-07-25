@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+logs/
+runs/
+restarted_pre_exclusive/
+historical_unverified/
+plots/
+*.tmp.xlsx

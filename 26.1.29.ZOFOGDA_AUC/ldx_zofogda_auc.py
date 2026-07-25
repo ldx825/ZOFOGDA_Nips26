@@ -219,6 +219,8 @@ class ZOFOGDA_AUCCfg:
     # ZO gradient
     zo_delta: float = 1e-4
     zo_q: int = 5
+    x_momentum: bool = True
+    y_momentum: bool = True
 
     # dual projection
     v_clip: float = 10.0
@@ -482,8 +484,8 @@ def train_zofoGDA_auc_libsvm(cfg: ZOFOGDA_AUCCfg):
             vy_hat = grad_y_g(xb2, yb2_pm1)
 
             with torch.no_grad():
-                w = (1.0 - bt) * w + bt * w_hat
-                vy = (1.0 - at) * vy + at * vy_hat
+                w = (1.0 - bt) * w + bt * w_hat if cfg.x_momentum else w_hat
+                vy = (1.0 - at) * vy + at * vy_hat if cfg.y_momentum else vy_hat
 
             t += 1
 
@@ -544,6 +546,8 @@ def parse_args():
     # zeroth-order
     p.add_argument("--zo_delta", type=float, default=1e-4)
     p.add_argument("--zo_q", type=int, default=5)
+    p.add_argument("--no_x_momentum", action="store_true")
+    p.add_argument("--no_y_momentum", action="store_true")
 
     # dual
     p.add_argument("--v_clip", type=float, default=10.0)
@@ -598,6 +602,8 @@ def main():
 
         zo_delta=args.zo_delta,
         zo_q=args.zo_q,
+        x_momentum=not args.no_x_momentum,
+        y_momentum=not args.no_y_momentum,
 
         v_clip=args.v_clip,
         save_all_theta=args.save_all_theta,

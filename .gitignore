@@ -18,3 +18,20 @@ wandb/
 /rebuttal/results/
 /rebuttal/logs/
 /rebuttal/plots/
+
+# Original-code AUC rebuttal runtime artifacts.
+# Keep the reproducible manager, manifest, queues, registry, and workbook;
+# exclude files that are still being written by background workers.
+/rebuttal_auc_original/__pycache__/
+/rebuttal_auc_original/logs/
+/rebuttal_auc_original/runs/
+/rebuttal_auc_original/restarted_pre_exclusive/
+/rebuttal_auc_original/historical_unverified/
+/rebuttal_auc_original/plots/
+/rebuttal_auc_original/*.tmp.xlsx
+
+# Common local process/editor artifacts
+*.log
+*.pid
+*.swp
+*~
