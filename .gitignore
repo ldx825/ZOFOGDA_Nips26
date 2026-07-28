@@ -34,6 +34,17 @@ wandb/
 /rebuttal_auc_original/*_FINAL.xlsx
 ~$*.xlsx
 
+# High-dimensional AUC data and runtime artifacts. Data are reproducibly fetched
+# from official LIBSVM/UCI sources by rebuttal_auc_highdim/prepare_data.py.
+/26.1.29.ZOFOGDA_AUC/data_highdim/
+/rebuttal_auc_highdim/downloads/
+/rebuttal_auc_highdim/source_data/
+/rebuttal_auc_highdim/__pycache__/
+/rebuttal_auc_highdim/logs/
+/rebuttal_auc_highdim/runs/
+/rebuttal_auc_highdim/AUC_highdim_M_results.xlsx
+/rebuttal_auc_highdim/*.tmp.xlsx
+
 # Common local process/editor artifacts
 .pytest_cache/
 .mypy_cache/

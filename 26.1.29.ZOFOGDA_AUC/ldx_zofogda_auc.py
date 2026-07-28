@@ -221,6 +221,8 @@ class ZOFOGDA_AUCCfg:
     zo_q: int = 5
     x_momentum: bool = True
     y_momentum: bool = True
+    momentum_mode: str = "scheduled"
+    momentum_decay: float = 0.1
 
     # dual projection
     v_clip: float = 10.0
@@ -315,6 +317,10 @@ def auc_minimax_loss(scores, y_pm1, a, b, v, p_pos: float):
 # Train
 # =========================
 def train_zofoGDA_auc_libsvm(cfg: ZOFOGDA_AUCCfg):
+    if cfg.momentum_mode not in {"scheduled", "fixed"}:
+        raise ValueError(f"Unsupported momentum_mode: {cfg.momentum_mode}")
+    if not 0.0 <= cfg.momentum_decay <= 1.0:
+        raise ValueError("momentum_decay must be in [0, 1]")
     set_seed(cfg.seed)
     device = torch.device(cfg.device)
 
@@ -484,8 +490,14 @@ def train_zofoGDA_auc_libsvm(cfg: ZOFOGDA_AUCCfg):
             vy_hat = grad_y_g(xb2, yb2_pm1)
 
             with torch.no_grad():
-                w = (1.0 - bt) * w + bt * w_hat if cfg.x_momentum else w_hat
-                vy = (1.0 - at) * vy + at * vy_hat if cfg.y_momentum else vy_hat
+                if cfg.momentum_mode == "fixed":
+                    old_weight = cfg.momentum_decay
+                    new_weight = 1.0 - old_weight
+                    w = old_weight * w + new_weight * w_hat if cfg.x_momentum else w_hat
+                    vy = old_weight * vy + new_weight * vy_hat if cfg.y_momentum else vy_hat
+                else:
+                    w = (1.0 - bt) * w + bt * w_hat if cfg.x_momentum else w_hat
+                    vy = (1.0 - at) * vy + at * vy_hat if cfg.y_momentum else vy_hat
 
             t += 1
 
@@ -524,7 +536,9 @@ def parse_args():
 
     # dataset knobs
     p.add_argument("--dataset", type=str, default="svmguide1",
-                   choices=["climate", "german", "svmguide1", "spambase", "a9a", "ijcnn1", "covtype", "connect", "acoustic"],
+                   choices=["climate", "german", "svmguide1", "spambase", "a9a", "ijcnn1",
+                            "madelon", "gisette", "arcene", "dexter",
+                            "covtype", "connect", "acoustic"],
                    help="Dataset name (used to resolve default train/test under data_dir).")
     p.add_argument("--data_dir", type=str, default="./data", help="Directory that stores libsvm files.")
     p.add_argument("--train_path", type=str, default="", help="Override train file path.")
@@ -548,6 +562,9 @@ def parse_args():
     p.add_argument("--zo_q", type=int, default=5)
     p.add_argument("--no_x_momentum", action="store_true")
     p.add_argument("--no_y_momentum", action="store_true")
+    p.add_argument("--momentum_mode", choices=["scheduled", "fixed"], default="scheduled")
+    p.add_argument("--momentum_decay", type=float, default=0.1,
+                   help="Old-momentum weight for fixed mode; 0.1 gives w=0.1*w+0.9*g.")
 
     # dual
     p.add_argument("--v_clip", type=float, default=10.0)
@@ -604,6 +621,8 @@ def main():
         zo_q=args.zo_q,
         x_momentum=not args.no_x_momentum,
         y_momentum=not args.no_y_momentum,
+        momentum_mode=args.momentum_mode,
+        momentum_decay=args.momentum_decay,
 
         v_clip=args.v_clip,
         save_all_theta=args.save_all_theta,

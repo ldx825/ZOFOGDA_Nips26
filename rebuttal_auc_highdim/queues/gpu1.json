@@ -1,0 +1,28 @@
+[
+  {
+    "run_id": "auc_zofosgda_gisette_highdim_M_sqrt_d_s42_600cfd0",
+    "method": "ZOFOSGDA",
+    "dataset": "gisette",
+    "experiment": "highdim_M",
+    "value": "sqrt_d",
+    "seed": 42,
+    "epochs": 500,
+    "batch_size": 128,
+    "hidden": 128,
+    "q": 70,
+    "delta": 0.001,
+    "x_momentum": true,
+    "y_momentum": true,
+    "momentum_mode": "scheduled",
+    "momentum_decay": 0.1,
+    "lr_x": null,
+    "lr_y": null,
+    "gamma": 0.003,
+    "lam": 0.003,
+    "n_train": 6000,
+    "n_test": 1000,
+    "feature_dim": 5000,
+    "estimated_cost": 2115000000000,
+    "gpu": 1
+  }
+]

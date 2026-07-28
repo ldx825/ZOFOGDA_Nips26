@@ -46,6 +46,8 @@ ZO_STEP = {
 TTGDA_LR = {d: (0.01, 0.0001) for d in DATASETS}
 TTGDA_LR["ijcnn1"] = (0.08, 0.0008)
 TTSGDA_LR = {d: (0.01, 0.0001) for d in DATASETS}
+ORIGINAL_TWOTIMESCALE_LR = (0.001, 0.05)
+PAPER_MAIN_LR = (0.01, 0.1)
 METHOD_ORDER = {"TTGDA": 0, "TTSGDA": 1, "ZOFOSGDA": 2}
 
 
@@ -111,6 +113,8 @@ def make_run(method, dataset, experiment, value, seed, sizes, **kwargs):
         "delta": float(kwargs.get("delta", 0.001)),
         "x_momentum": bool(kwargs.get("x_momentum", True)),
         "y_momentum": bool(kwargs.get("y_momentum", True)),
+        "momentum_mode": kwargs.get("momentum_mode", "scheduled"),
+        "momentum_decay": float(kwargs.get("momentum_decay", 0.1)),
         "lr_x": kwargs.get("lr_x"),
         "lr_y": kwargs.get("lr_y"),
         "gamma": kwargs.get("gamma"),
@@ -135,6 +139,40 @@ def build(force=False):
                              q=q, delta=0.001, gamma=gx, lam=gy)
                 if r["run_id"] not in existing_ids:
                     additions.append(r)
+                for method in ["TTGDA", "TTSGDA"]:
+                    lr_x, lr_y = ORIGINAL_TWOTIMESCALE_LR
+                    r = make_run(
+                        method, d, "baseline_correct_lr", "original_twotimescale",
+                        seed, sizes, lr_x=lr_x, lr_y=lr_y,
+                    )
+                    if r["run_id"] not in existing_ids:
+                        additions.append(r)
+                for method in ["TTGDA", "TTSGDA"]:
+                    lr_x, lr_y = PAPER_MAIN_LR
+                    r = make_run(
+                        method, d, "baseline_paper_main", "original_main",
+                        seed, sizes, lr_x=lr_x, lr_y=lr_y,
+                    )
+                    if r["run_id"] not in existing_ids:
+                        additions.append(r)
+                r = make_run(
+                    "ZOFOSGDA", d, "paper_reproduction_v2", "original_settings",
+                    seed, sizes, q=5, delta=0.001, gamma=gx, lam=gy,
+                    momentum_mode="scheduled",
+                )
+                if r["run_id"] not in existing_ids:
+                    additions.append(r)
+                for label, xm, ym in [
+                    ("full", True, True), ("no_x", False, True),
+                    ("no_y", True, False), ("no_both", False, False),
+                ]:
+                    r = make_run(
+                        "ZOFOSGDA", d, "fixed_momentum", label, seed, sizes,
+                        q=5, delta=0.001, x_momentum=xm, y_momentum=ym,
+                        gamma=gx, lam=gy, momentum_mode="fixed", momentum_decay=0.1,
+                    )
+                    if r["run_id"] not in existing_ids:
+                        additions.append(r)
         if additions:
             # Preserve completed runs' GPU assignments and balance only new jobs.
             loads = [0] * 8
@@ -149,13 +187,13 @@ def build(force=False):
                             [r for r in runs if r["gpu"] == gpu])
             fields = ["run_id", "gpu", "dataset", "method", "experiment", "value", "seed",
                       "epochs", "batch_size", "q", "delta", "x_momentum", "y_momentum",
-                      "lr_x", "lr_y", "gamma", "lam", "n_train", "n_test", "estimated_cost"]
+                      "momentum_mode", "momentum_decay", "lr_x", "lr_y", "gamma", "lam", "n_train", "n_test", "estimated_cost"]
             with open(REGISTRY, "w", newline="", encoding="utf-8-sig") as f:
                 w = csv.DictWriter(f, fieldnames=fields, lineterminator="\n")
                 w.writeheader()
                 for r in runs:
                     w.writerow({k: r.get(k) for k in fields})
-            print(f"Added {len(additions)} sqrt(d) runs; total={len(runs)}")
+            print(f"Added {len(additions)} missing runs; total={len(runs)}")
         else:
             print(f"Manifest already exists: {len(runs)} runs")
         return runs
@@ -168,6 +206,18 @@ def build(force=False):
         for seed in SEEDS:
             runs.append(make_run("TTGDA", d, "baseline", "paper", seed, sizes, lr_x=tx, lr_y=ty))
             runs.append(make_run("TTSGDA", d, "baseline", "paper", seed, sizes, lr_x=sx, lr_y=sy))
+            for method in ["TTGDA", "TTSGDA"]:
+                lr_x, lr_y = ORIGINAL_TWOTIMESCALE_LR
+                runs.append(make_run(
+                    method, d, "baseline_correct_lr", "original_twotimescale",
+                    seed, sizes, lr_x=lr_x, lr_y=lr_y,
+                ))
+            for method in ["TTGDA", "TTSGDA"]:
+                lr_x, lr_y = PAPER_MAIN_LR
+                runs.append(make_run(
+                    method, d, "baseline_paper_main", "original_main",
+                    seed, sizes, lr_x=lr_x, lr_y=lr_y,
+                ))
             runs.append(make_run("ZOFOSGDA", d, "baseline", "paper", seed, sizes,
                                  q=5, delta=0.001, gamma=gx, lam=gy))
             for q in [1, 10, 15, SQRT_D_M[d]]:
@@ -181,8 +231,22 @@ def build(force=False):
                 runs.append(make_run("ZOFOSGDA", d, "momentum", label, seed, sizes,
                                      q=5, delta=0.001, x_momentum=xm,
                                      y_momentum=ym, gamma=gx, lam=gy))
-    assert len(runs) == 216, len(runs)
-    assert len({r["run_id"] for r in runs}) == 216
+            runs.append(make_run(
+                "ZOFOSGDA", d, "paper_reproduction_v2", "original_settings",
+                seed, sizes, q=5, delta=0.001, gamma=gx, lam=gy,
+                momentum_mode="scheduled",
+            ))
+            for label, xm, ym in [
+                ("full", True, True), ("no_x", False, True),
+                ("no_y", True, False), ("no_both", False, False),
+            ]:
+                runs.append(make_run(
+                    "ZOFOSGDA", d, "fixed_momentum", label, seed, sizes,
+                    q=5, delta=0.001, x_momentum=xm, y_momentum=ym,
+                    gamma=gx, lam=gy, momentum_mode="fixed", momentum_decay=0.1,
+                ))
+    assert len(runs) == 378, len(runs)
+    assert len({r["run_id"] for r in runs}) == 378
 
     # Greedy cost balancing, with expensive jobs first.
     queues = [[] for _ in range(8)]
@@ -202,7 +266,7 @@ def build(force=False):
         atomic_json(QUEUES_DIR / f"gpu{gpu}.json", queue)
     fields = ["run_id", "gpu", "dataset", "method", "experiment", "value", "seed",
               "epochs", "batch_size", "q", "delta", "x_momentum", "y_momentum",
-              "lr_x", "lr_y", "gamma", "lam", "n_train", "n_test", "estimated_cost"]
+              "momentum_mode", "momentum_decay", "lr_x", "lr_y", "gamma", "lam", "n_train", "n_test", "estimated_cost"]
     with open(REGISTRY, "w", newline="", encoding="utf-8-sig") as f:
         w = csv.DictWriter(f, fieldnames=fields, lineterminator="\n")
         w.writeheader()
@@ -228,6 +292,8 @@ def command_for(r, gpu, out_dir):
             "--log_prefix", "zofoGDA_auc", "--eta_k", "10", "--eta_m", "1000",
             "--c1", "3", "--c2", "3", "--gamma", str(r["gamma"]),
             "--lam", str(r["lam"]), "--zo_delta", str(r["delta"]), "--zo_q", str(r["q"]),
+            "--momentum_mode", r.get("momentum_mode", "scheduled"),
+            "--momentum_decay", str(r.get("momentum_decay", 0.1)),
         ]
         if not r["x_momentum"]:
             common.append("--no_x_momentum")
@@ -527,6 +593,13 @@ def refresh():
         ("ZOFOGDA-no-x", "ZOFOSGDA", "momentum", "no_x"),
         ("ZOFOGDA-no-y", "ZOFOSGDA", "momentum", "no_y"),
         ("ZOFOGDA-no-both", "ZOFOSGDA", "momentum", "no_both"),
+        ("TTGDA-学习率修正", "TTGDA", "baseline_paper_main", "original_main"),
+        ("TTSGDA-学习率修正", "TTSGDA", "baseline_paper_main", "original_main"),
+        ("ZOFOGDA-full-0.1 0.9", "ZOFOSGDA", "fixed_momentum", "full"),
+        ("ZOFOGDA-no-x-0.1 0.9", "ZOFOSGDA", "fixed_momentum", "no_x"),
+        ("ZOFOGDA-no-y-0.1 0.9", "ZOFOSGDA", "fixed_momentum", "no_y"),
+        ("ZOFOGDA-no-both-0.1 0.9", "ZOFOSGDA", "fixed_momentum", "no_both"),
+        ("ZOFOGDA-原论文-7.26复现", "ZOFOSGDA", "paper_reproduction_v2", "original_settings"),
     ]
 
     def condition_values(dataset, method, experiment, value):
@@ -613,7 +686,10 @@ def refresh():
     ws = wb.create_sheet("消融结果")
     setup(ws,["数据集","方法","消融变量","对应值","所做任务","结果（Final AUC）","Best AUC",
               "完成种子","平均运行时间(min)","平均Sample Queries","状态/来源"])
-    conditions = [("M",v) for v in [1,5,10,15,"sqrt_d"]] + [("delta",v) for v in [0.0001,0.001,0.01]] + [("momentum",v) for v in ["full","no_x","no_y","no_both"]]
+    conditions = ([("M",v) for v in [1,5,10,15,"sqrt_d"]] +
+                  [("delta",v) for v in [0.0001,0.001,0.01]] +
+                  [("momentum",v) for v in ["full","no_x","no_y","no_both"]] +
+                  [("fixed_momentum",v) for v in ["full","no_x","no_y","no_both"]])
     for d in DATASETS:
         for exp,val in conditions:
             vals=[]; best=[]; times=[]; queries=[]; sources=[]
@@ -661,7 +737,8 @@ def refresh():
           ("失败",failed),("等待",len(runs)-completed-running-failed),("完成比例",f"{completed/len(runs):.1%}"),
           ("实验范围","仅AUC：6数据集，500 epochs，seeds 14/42/81"),
           ("原始训练入口","ldx_zofogda_auc.py / ldx_ttgda_auc.py / ldx_ttsgda_auc.py"),
-          ("说明","正式表仅使用本次独占GPU、seeds 14/42/81 的可审计复跑；历史精选结果不进入汇总。"),
+          ("说明","正式表仅使用本次独占GPU、seeds 14/42/81 的可审计复跑；原论文行保留论文逐数据集参数，学习率修正行单列 lr_x=0.01、lr_y=0.1。"),
+          ("新增实验","固定动量 w=0.1w+0.9g 的 full/no-x/no-y/no-both，以及 ZOFOGDA 原设置独立 v2 复现。"),
           ("历史数据说明","旧result_plot仅保留作历史审计，不作为正式结果或默认绘图数据源。")]
     for row in rows: ws.append(row)
     finish(ws,{"A":24,"B":80})
@@ -692,10 +769,20 @@ def launch():
 
 def reporter():
     while True:
-        status=refresh()
-        terminal=status.get("completed",0)+status.get("failed",0)
-        if terminal>=len(build()):
+        status = refresh()
+        runs = build()
+        terminal = status.get("completed", 0) + status.get("failed", 0)
+        if terminal >= len(runs):
             break
+        for gpu in range(8):
+            unfinished = any(
+                r["gpu"] == gpu and load_state(r).get("status") != "completed"
+                for r in runs
+            )
+            name = f"auc_original_gpu{gpu}"
+            if unfinished and not session_exists(name):
+                cmd = f"cd {ROOT} && {sys.executable} {Path(__file__).resolve()} worker --gpu {gpu}"
+                subprocess.run(["tmux", "new-session", "-d", "-s", name, cmd], check=True)
         time.sleep(120)
 
 

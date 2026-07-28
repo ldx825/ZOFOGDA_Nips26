@@ -75,7 +75,8 @@ def specs(comparison):
         return fixed+[("M=floor(sqrt(d))","ZOFOSGDA","M","sqrt_d")]
     if comparison=="delta":
         return [(f"delta={v}","ZOFOSGDA","delta",v) for v in [0.0001,0.001,0.01]]
-    return [(label,"ZOFOSGDA","momentum",value) for label,value in
+    experiment = "fixed_momentum" if comparison == "fixed_momentum" else "momentum"
+    return [(label,"ZOFOSGDA",experiment,value) for label,value in
             [("full","full"),("no-x","no_x"),("no-y","no_y"),("no-both","no_both")]]
 
 
@@ -96,7 +97,7 @@ def aggregate(curves,xaxis):
 def main():
     p=argparse.ArgumentParser()
     p.add_argument("--datasets",default=",".join(manage.DATASETS),help="comma-separated")
-    p.add_argument("--comparison",choices=["baseline","M","delta","momentum"],default="baseline")
+    p.add_argument("--comparison",choices=["baseline","M","delta","momentum","fixed_momentum"],default="baseline")
     p.add_argument("--xaxis",choices=["epoch","time","query"],default="epoch")
     p.add_argument("--output",default="")
     args=p.parse_args()
