@@ -25,6 +25,7 @@ wandb/
 /rebuttal_auc_original/__pycache__/
 /rebuttal_auc_original/logs/
 /rebuttal_auc_original/runs/
+/rebuttal_auc_original/archive/
 /rebuttal_auc_original/restarted_pre_exclusive/
 /rebuttal_auc_original/historical_unverified/
 /rebuttal_auc_original/plots/
@@ -42,6 +43,7 @@ wandb/
 /rebuttal_auc_highdim/__pycache__/
 /rebuttal_auc_highdim/logs/
 /rebuttal_auc_highdim/runs/
+/rebuttal_auc_highdim/archive/
 /rebuttal_auc_highdim/AUC_highdim_M_results.xlsx
 /rebuttal_auc_highdim/*.tmp.xlsx
 

@@ -34,7 +34,18 @@ FEATURE_DIMS = {
     "a9a": 123,
     "ijcnn1": 22,
 }
-SQRT_D_M = {dataset: math.isqrt(dim) for dataset, dim in FEATURE_DIMS.items()}
+MODEL_HIDDEN = 128
+
+
+def primal_parameter_dim(input_dim, hidden=MODEL_HIDDEN):
+    """Parameter count of AUCPrimalModule: two-layer MLP plus scalar a and b."""
+    return hidden * input_dim + 2 * hidden + 3
+
+
+OPTIMIZATION_DIMS = {
+    dataset: primal_parameter_dim(dim) for dataset, dim in FEATURE_DIMS.items()
+}
+SQRT_D_M = {dataset: math.isqrt(dim) for dataset, dim in OPTIMIZATION_DIMS.items()}
 ZO_STEP = {
     "climate": (0.01, 0.01),
     "german": (0.005, 0.005),
@@ -108,7 +119,9 @@ def make_run(method, dataset, experiment, value, seed, sizes, **kwargs):
         "seed": seed,
         "epochs": EPOCHS,
         "batch_size": BATCH_SIZE,
-        "hidden": 128,
+        "hidden": MODEL_HIDDEN,
+        "feature_dim": sizes[dataset]["features"],
+        "optimization_dim": OPTIMIZATION_DIMS[dataset],
         "q": q,
         "delta": float(kwargs.get("delta", 0.001)),
         "x_momentum": bool(kwargs.get("x_momentum", True)),
@@ -186,7 +199,7 @@ def build(force=False):
                 atomic_json(QUEUES_DIR / f"gpu{gpu}.json",
                             [r for r in runs if r["gpu"] == gpu])
             fields = ["run_id", "gpu", "dataset", "method", "experiment", "value", "seed",
-                      "epochs", "batch_size", "q", "delta", "x_momentum", "y_momentum",
+                      "epochs", "batch_size", "feature_dim", "optimization_dim", "q", "delta", "x_momentum", "y_momentum",
                       "momentum_mode", "momentum_decay", "lr_x", "lr_y", "gamma", "lam", "n_train", "n_test", "estimated_cost"]
             with open(REGISTRY, "w", newline="", encoding="utf-8-sig") as f:
                 w = csv.DictWriter(f, fieldnames=fields, lineterminator="\n")
@@ -265,7 +278,7 @@ def build(force=False):
     for gpu, queue in enumerate(queues):
         atomic_json(QUEUES_DIR / f"gpu{gpu}.json", queue)
     fields = ["run_id", "gpu", "dataset", "method", "experiment", "value", "seed",
-              "epochs", "batch_size", "q", "delta", "x_momentum", "y_momentum",
+              "epochs", "batch_size", "feature_dim", "optimization_dim", "q", "delta", "x_momentum", "y_momentum",
               "momentum_mode", "momentum_decay", "lr_x", "lr_y", "gamma", "lam", "n_train", "n_test", "estimated_cost"]
     with open(REGISTRY, "w", newline="", encoding="utf-8-sig") as f:
         w = csv.DictWriter(f, fieldnames=fields, lineterminator="\n")

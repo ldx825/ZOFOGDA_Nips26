@@ -30,13 +30,22 @@ WORKBOOK = HERE / "AUC_highdim_M_results.xlsx"
 
 DATASETS = ["madelon", "gisette", "arcene", "dexter"]
 FEATURE_DIMS = {"madelon": 500, "gisette": 5000, "arcene": 10000, "dexter": 20000}
+MODEL_HIDDEN = 128
 EXPECTED_SIZES = {
     "madelon": (2000, 600),
     "gisette": (6000, 1000),
     "arcene": (100, 100),
     "dexter": (300, 300),
 }
-SQRT_D_M = {name: math.isqrt(dim) for name, dim in FEATURE_DIMS.items()}
+def primal_parameter_dim(input_dim: int, hidden: int = MODEL_HIDDEN) -> int:
+    """Parameter count of AUCPrimalModule: two-layer MLP plus scalar a and b."""
+    return hidden * input_dim + 2 * hidden + 3
+
+
+OPTIMIZATION_DIMS = {
+    name: primal_parameter_dim(dim) for name, dim in FEATURE_DIMS.items()
+}
+SQRT_D_M = {name: math.isqrt(dim) for name, dim in OPTIMIZATION_DIMS.items()}
 STEP = {
     "madelon": (0.01, 0.01),
     "gisette": (0.003, 0.003),
@@ -123,7 +132,9 @@ def make_run(dataset: str, value, seed: int, sizes: dict) -> dict:
         "seed": seed,
         "epochs": EPOCHS,
         "batch_size": BATCH_SIZE,
-        "hidden": 128,
+        "hidden": MODEL_HIDDEN,
+        "feature_dim": dim,
+        "optimization_dim": OPTIMIZATION_DIMS[dataset],
         "q": q,
         "delta": 0.001,
         "x_momentum": True,
@@ -144,7 +155,7 @@ def make_run(dataset: str, value, seed: int, sizes: dict) -> dict:
 def write_registry(runs: list[dict]) -> None:
     fields = [
         "run_id", "gpu", "dataset", "method", "experiment", "value", "seed",
-        "epochs", "batch_size", "feature_dim", "q", "delta", "x_momentum",
+        "epochs", "batch_size", "feature_dim", "optimization_dim", "q", "delta", "x_momentum",
         "y_momentum", "momentum_mode", "gamma", "lam", "n_train", "n_test",
         "estimated_cost",
     ]
@@ -160,6 +171,14 @@ def build(force: bool = False) -> list[dict]:
         runs = json.loads(MANIFEST.read_text())
         if len(runs) != 60 or len({run["run_id"] for run in runs}) != 60:
             raise RuntimeError("Existing high-dimensional manifest is invalid")
+        stale = [
+            run for run in runs
+            if run["value"] == "sqrt_d" and run["q"] != SQRT_D_M[run["dataset"]]
+        ]
+        if stale:
+            raise RuntimeError(
+                "Manifest uses input-feature sqrt(d); archive those results and rebuild with --force"
+            )
         print(f"Manifest already exists: {len(runs)} runs")
         return runs
 
@@ -294,12 +313,13 @@ def refresh() -> dict:
         ("失败", failed),
         ("等待", 60 - completed - running - failed),
         ("数据集", ", ".join(DATASETS)),
-        ("M", "1, 5, 10, 15, floor(sqrt(d))"),
+        ("M", "1, 5, 10, 15, floor(sqrt(d_opt))"),
         ("Seeds", "14, 42, 81"),
         ("Epochs / batch", "500 / 128"),
         ("固定设置", "delta=1e-3, scheduled momentum"),
         ("步长", json.dumps(STEP)),
-        ("说明", "M=5 写入原配置行；公开 validation 固定作为测试集。"),
+        ("优化参数量", json.dumps(OPTIMIZATION_DIMS)),
+        ("说明", "d_opt 是被零阶扰动的完整 primal 参数量；M=5 写入原配置行；公开 validation 固定作为测试集。"),
     ]
     for row in rows:
         progress.append(row)

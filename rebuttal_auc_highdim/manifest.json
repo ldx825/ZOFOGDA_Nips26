@@ -9,6 +9,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 500,
+    "optimization_dim": 64259,
     "q": 1,
     "delta": 0.001,
     "x_momentum": true,
@@ -21,9 +23,8 @@
     "lam": 0.01,
     "n_train": 2000,
     "n_test": 600,
-    "feature_dim": 500,
     "estimated_cost": 1500000000,
-    "gpu": 5
+    "gpu": 6
   },
   {
     "run_id": "auc_zofosgda_madelon_highdim_M_1_s42_1e43f64",
@@ -35,6 +36,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 500,
+    "optimization_dim": 64259,
     "q": 1,
     "delta": 0.001,
     "x_momentum": true,
@@ -47,9 +50,8 @@
     "lam": 0.01,
     "n_train": 2000,
     "n_test": 600,
-    "feature_dim": 500,
     "estimated_cost": 1500000000,
-    "gpu": 7
+    "gpu": 6
   },
   {
     "run_id": "auc_zofosgda_madelon_highdim_M_1_s81_e1c3740",
@@ -61,6 +63,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 500,
+    "optimization_dim": 64259,
     "q": 1,
     "delta": 0.001,
     "x_momentum": true,
@@ -73,9 +77,8 @@
     "lam": 0.01,
     "n_train": 2000,
     "n_test": 600,
-    "feature_dim": 500,
     "estimated_cost": 1500000000,
-    "gpu": 5
+    "gpu": 6
   },
   {
     "run_id": "auc_zofosgda_madelon_highdim_M_5_s14_1ec258a",
@@ -87,6 +90,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 500,
+    "optimization_dim": 64259,
     "q": 5,
     "delta": 0.001,
     "x_momentum": true,
@@ -99,7 +104,6 @@
     "lam": 0.01,
     "n_train": 2000,
     "n_test": 600,
-    "feature_dim": 500,
     "estimated_cost": 5500000000,
     "gpu": 6
   },
@@ -113,6 +117,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 500,
+    "optimization_dim": 64259,
     "q": 5,
     "delta": 0.001,
     "x_momentum": true,
@@ -125,9 +131,8 @@
     "lam": 0.01,
     "n_train": 2000,
     "n_test": 600,
-    "feature_dim": 500,
     "estimated_cost": 5500000000,
-    "gpu": 4
+    "gpu": 7
   },
   {
     "run_id": "auc_zofosgda_madelon_highdim_M_5_s81_0b8da67",
@@ -139,6 +144,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 500,
+    "optimization_dim": 64259,
     "q": 5,
     "delta": 0.001,
     "x_momentum": true,
@@ -151,9 +158,8 @@
     "lam": 0.01,
     "n_train": 2000,
     "n_test": 600,
-    "feature_dim": 500,
     "estimated_cost": 5500000000,
-    "gpu": 7
+    "gpu": 6
   },
   {
     "run_id": "auc_zofosgda_madelon_highdim_M_10_s14_3133ffa",
@@ -165,6 +171,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 500,
+    "optimization_dim": 64259,
     "q": 10,
     "delta": 0.001,
     "x_momentum": true,
@@ -177,9 +185,8 @@
     "lam": 0.01,
     "n_train": 2000,
     "n_test": 600,
-    "feature_dim": 500,
     "estimated_cost": 10500000000,
-    "gpu": 5
+    "gpu": 7
   },
   {
     "run_id": "auc_zofosgda_madelon_highdim_M_10_s42_b9b449f",
@@ -191,6 +198,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 500,
+    "optimization_dim": 64259,
     "q": 10,
     "delta": 0.001,
     "x_momentum": true,
@@ -203,7 +212,6 @@
     "lam": 0.01,
     "n_train": 2000,
     "n_test": 600,
-    "feature_dim": 500,
     "estimated_cost": 10500000000,
     "gpu": 6
   },
@@ -217,6 +225,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 500,
+    "optimization_dim": 64259,
     "q": 10,
     "delta": 0.001,
     "x_momentum": true,
@@ -229,9 +239,8 @@
     "lam": 0.01,
     "n_train": 2000,
     "n_test": 600,
-    "feature_dim": 500,
     "estimated_cost": 10500000000,
-    "gpu": 3
+    "gpu": 7
   },
   {
     "run_id": "auc_zofosgda_madelon_highdim_M_15_s14_0fbd001",
@@ -243,6 +252,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 500,
+    "optimization_dim": 64259,
     "q": 15,
     "delta": 0.001,
     "x_momentum": true,
@@ -255,7 +266,6 @@
     "lam": 0.01,
     "n_train": 2000,
     "n_test": 600,
-    "feature_dim": 500,
     "estimated_cost": 15500000000,
     "gpu": 7
   },
@@ -269,6 +279,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 500,
+    "optimization_dim": 64259,
     "q": 15,
     "delta": 0.001,
     "x_momentum": true,
@@ -281,9 +293,8 @@
     "lam": 0.01,
     "n_train": 2000,
     "n_test": 600,
-    "feature_dim": 500,
     "estimated_cost": 15500000000,
-    "gpu": 4
+    "gpu": 6
   },
   {
     "run_id": "auc_zofosgda_madelon_highdim_M_15_s81_2c8cb16",
@@ -295,6 +306,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 500,
+    "optimization_dim": 64259,
     "q": 15,
     "delta": 0.001,
     "x_momentum": true,
@@ -307,9 +320,8 @@
     "lam": 0.01,
     "n_train": 2000,
     "n_test": 600,
-    "feature_dim": 500,
     "estimated_cost": 15500000000,
-    "gpu": 5
+    "gpu": 7
   },
   {
     "run_id": "auc_zofosgda_madelon_highdim_M_sqrt_d_s14_96af0f9",
@@ -321,7 +333,9 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
-    "q": 22,
+    "feature_dim": 500,
+    "optimization_dim": 64259,
+    "q": 253,
     "delta": 0.001,
     "x_momentum": true,
     "y_momentum": true,
@@ -333,9 +347,8 @@
     "lam": 0.01,
     "n_train": 2000,
     "n_test": 600,
-    "feature_dim": 500,
-    "estimated_cost": 22500000000,
-    "gpu": 6
+    "estimated_cost": 253500000000,
+    "gpu": 7
   },
   {
     "run_id": "auc_zofosgda_madelon_highdim_M_sqrt_d_s42_0382543",
@@ -347,7 +360,9 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
-    "q": 22,
+    "feature_dim": 500,
+    "optimization_dim": 64259,
+    "q": 253,
     "delta": 0.001,
     "x_momentum": true,
     "y_momentum": true,
@@ -359,9 +374,8 @@
     "lam": 0.01,
     "n_train": 2000,
     "n_test": 600,
-    "feature_dim": 500,
-    "estimated_cost": 22500000000,
-    "gpu": 3
+    "estimated_cost": 253500000000,
+    "gpu": 6
   },
   {
     "run_id": "auc_zofosgda_madelon_highdim_M_sqrt_d_s81_f3432c8",
@@ -373,7 +387,9 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
-    "q": 22,
+    "feature_dim": 500,
+    "optimization_dim": 64259,
+    "q": 253,
     "delta": 0.001,
     "x_momentum": true,
     "y_momentum": true,
@@ -385,9 +401,8 @@
     "lam": 0.01,
     "n_train": 2000,
     "n_test": 600,
-    "feature_dim": 500,
-    "estimated_cost": 22500000000,
-    "gpu": 6
+    "estimated_cost": 253500000000,
+    "gpu": 7
   },
   {
     "run_id": "auc_zofosgda_gisette_highdim_M_1_s14_bb6f6e4",
@@ -399,6 +414,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 5000,
+    "optimization_dim": 640259,
     "q": 1,
     "delta": 0.001,
     "x_momentum": true,
@@ -411,9 +428,8 @@
     "lam": 0.003,
     "n_train": 6000,
     "n_test": 1000,
-    "feature_dim": 5000,
     "estimated_cost": 45000000000,
-    "gpu": 4
+    "gpu": 6
   },
   {
     "run_id": "auc_zofosgda_gisette_highdim_M_1_s42_22d835e",
@@ -425,6 +441,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 5000,
+    "optimization_dim": 640259,
     "q": 1,
     "delta": 0.001,
     "x_momentum": true,
@@ -437,9 +455,8 @@
     "lam": 0.003,
     "n_train": 6000,
     "n_test": 1000,
-    "feature_dim": 5000,
     "estimated_cost": 45000000000,
-    "gpu": 5
+    "gpu": 7
   },
   {
     "run_id": "auc_zofosgda_gisette_highdim_M_1_s81_c4cf0fe",
@@ -451,6 +468,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 5000,
+    "optimization_dim": 640259,
     "q": 1,
     "delta": 0.001,
     "x_momentum": true,
@@ -463,9 +482,8 @@
     "lam": 0.003,
     "n_train": 6000,
     "n_test": 1000,
-    "feature_dim": 5000,
     "estimated_cost": 45000000000,
-    "gpu": 3
+    "gpu": 6
   },
   {
     "run_id": "auc_zofosgda_gisette_highdim_M_5_s14_6a778c3",
@@ -477,6 +495,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 5000,
+    "optimization_dim": 640259,
     "q": 5,
     "delta": 0.001,
     "x_momentum": true,
@@ -489,9 +509,8 @@
     "lam": 0.003,
     "n_train": 6000,
     "n_test": 1000,
-    "feature_dim": 5000,
     "estimated_cost": 165000000000,
-    "gpu": 4
+    "gpu": 6
   },
   {
     "run_id": "auc_zofosgda_gisette_highdim_M_5_s42_2a87d20",
@@ -503,6 +522,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 5000,
+    "optimization_dim": 640259,
     "q": 5,
     "delta": 0.001,
     "x_momentum": true,
@@ -515,9 +536,8 @@
     "lam": 0.003,
     "n_train": 6000,
     "n_test": 1000,
-    "feature_dim": 5000,
     "estimated_cost": 165000000000,
-    "gpu": 5
+    "gpu": 6
   },
   {
     "run_id": "auc_zofosgda_gisette_highdim_M_5_s81_d4c73b9",
@@ -529,6 +549,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 5000,
+    "optimization_dim": 640259,
     "q": 5,
     "delta": 0.001,
     "x_momentum": true,
@@ -541,9 +563,8 @@
     "lam": 0.003,
     "n_train": 6000,
     "n_test": 1000,
-    "feature_dim": 5000,
     "estimated_cost": 165000000000,
-    "gpu": 6
+    "gpu": 7
   },
   {
     "run_id": "auc_zofosgda_gisette_highdim_M_10_s14_f5b9ab9",
@@ -555,6 +576,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 5000,
+    "optimization_dim": 640259,
     "q": 10,
     "delta": 0.001,
     "x_momentum": true,
@@ -567,9 +590,8 @@
     "lam": 0.003,
     "n_train": 6000,
     "n_test": 1000,
-    "feature_dim": 5000,
     "estimated_cost": 315000000000,
-    "gpu": 7
+    "gpu": 6
   },
   {
     "run_id": "auc_zofosgda_gisette_highdim_M_10_s42_7ae47cf",
@@ -581,6 +603,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 5000,
+    "optimization_dim": 640259,
     "q": 10,
     "delta": 0.001,
     "x_momentum": true,
@@ -593,7 +617,6 @@
     "lam": 0.003,
     "n_train": 6000,
     "n_test": 1000,
-    "feature_dim": 5000,
     "estimated_cost": 315000000000,
     "gpu": 7
   },
@@ -607,6 +630,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 5000,
+    "optimization_dim": 640259,
     "q": 10,
     "delta": 0.001,
     "x_momentum": true,
@@ -619,9 +644,8 @@
     "lam": 0.003,
     "n_train": 6000,
     "n_test": 1000,
-    "feature_dim": 5000,
     "estimated_cost": 315000000000,
-    "gpu": 3
+    "gpu": 6
   },
   {
     "run_id": "auc_zofosgda_gisette_highdim_M_15_s14_f242fe1",
@@ -633,6 +657,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 5000,
+    "optimization_dim": 640259,
     "q": 15,
     "delta": 0.001,
     "x_momentum": true,
@@ -645,9 +671,8 @@
     "lam": 0.003,
     "n_train": 6000,
     "n_test": 1000,
-    "feature_dim": 5000,
     "estimated_cost": 465000000000,
-    "gpu": 6
+    "gpu": 7
   },
   {
     "run_id": "auc_zofosgda_gisette_highdim_M_15_s42_f7d4b2a",
@@ -659,6 +684,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 5000,
+    "optimization_dim": 640259,
     "q": 15,
     "delta": 0.001,
     "x_momentum": true,
@@ -671,7 +698,6 @@
     "lam": 0.003,
     "n_train": 6000,
     "n_test": 1000,
-    "feature_dim": 5000,
     "estimated_cost": 465000000000,
     "gpu": 7
   },
@@ -685,6 +711,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 5000,
+    "optimization_dim": 640259,
     "q": 15,
     "delta": 0.001,
     "x_momentum": true,
@@ -697,9 +725,8 @@
     "lam": 0.003,
     "n_train": 6000,
     "n_test": 1000,
-    "feature_dim": 5000,
     "estimated_cost": 465000000000,
-    "gpu": 6
+    "gpu": 7
   },
   {
     "run_id": "auc_zofosgda_gisette_highdim_M_sqrt_d_s14_d9cd63a",
@@ -711,7 +738,9 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
-    "q": 70,
+    "feature_dim": 5000,
+    "optimization_dim": 640259,
+    "q": 800,
     "delta": 0.001,
     "x_momentum": true,
     "y_momentum": true,
@@ -723,8 +752,7 @@
     "lam": 0.003,
     "n_train": 6000,
     "n_test": 1000,
-    "feature_dim": 5000,
-    "estimated_cost": 2115000000000,
+    "estimated_cost": 24015000000000,
     "gpu": 0
   },
   {
@@ -737,7 +765,9 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
-    "q": 70,
+    "feature_dim": 5000,
+    "optimization_dim": 640259,
+    "q": 800,
     "delta": 0.001,
     "x_momentum": true,
     "y_momentum": true,
@@ -749,8 +779,7 @@
     "lam": 0.003,
     "n_train": 6000,
     "n_test": 1000,
-    "feature_dim": 5000,
-    "estimated_cost": 2115000000000,
+    "estimated_cost": 24015000000000,
     "gpu": 1
   },
   {
@@ -763,7 +792,9 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
-    "q": 70,
+    "feature_dim": 5000,
+    "optimization_dim": 640259,
+    "q": 800,
     "delta": 0.001,
     "x_momentum": true,
     "y_momentum": true,
@@ -775,8 +806,7 @@
     "lam": 0.003,
     "n_train": 6000,
     "n_test": 1000,
-    "feature_dim": 5000,
-    "estimated_cost": 2115000000000,
+    "estimated_cost": 24015000000000,
     "gpu": 2
   },
   {
@@ -789,6 +819,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 10000,
+    "optimization_dim": 1280259,
     "q": 1,
     "delta": 0.001,
     "x_momentum": true,
@@ -801,7 +833,6 @@
     "lam": 0.005,
     "n_train": 100,
     "n_test": 100,
-    "feature_dim": 10000,
     "estimated_cost": 1500000000,
     "gpu": 7
   },
@@ -815,6 +846,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 10000,
+    "optimization_dim": 1280259,
     "q": 1,
     "delta": 0.001,
     "x_momentum": true,
@@ -827,9 +860,8 @@
     "lam": 0.005,
     "n_train": 100,
     "n_test": 100,
-    "feature_dim": 10000,
     "estimated_cost": 1500000000,
-    "gpu": 5
+    "gpu": 6
   },
   {
     "run_id": "auc_zofosgda_arcene_highdim_M_1_s81_de6dde8",
@@ -841,6 +873,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 10000,
+    "optimization_dim": 1280259,
     "q": 1,
     "delta": 0.001,
     "x_momentum": true,
@@ -853,7 +887,6 @@
     "lam": 0.005,
     "n_train": 100,
     "n_test": 100,
-    "feature_dim": 10000,
     "estimated_cost": 1500000000,
     "gpu": 7
   },
@@ -867,6 +900,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 10000,
+    "optimization_dim": 1280259,
     "q": 5,
     "delta": 0.001,
     "x_momentum": true,
@@ -879,9 +914,8 @@
     "lam": 0.005,
     "n_train": 100,
     "n_test": 100,
-    "feature_dim": 10000,
     "estimated_cost": 5500000000,
-    "gpu": 3
+    "gpu": 7
   },
   {
     "run_id": "auc_zofosgda_arcene_highdim_M_5_s42_9e32840",
@@ -893,6 +927,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 10000,
+    "optimization_dim": 1280259,
     "q": 5,
     "delta": 0.001,
     "x_momentum": true,
@@ -905,7 +941,6 @@
     "lam": 0.005,
     "n_train": 100,
     "n_test": 100,
-    "feature_dim": 10000,
     "estimated_cost": 5500000000,
     "gpu": 6
   },
@@ -919,6 +954,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 10000,
+    "optimization_dim": 1280259,
     "q": 5,
     "delta": 0.001,
     "x_momentum": true,
@@ -931,9 +968,8 @@
     "lam": 0.005,
     "n_train": 100,
     "n_test": 100,
-    "feature_dim": 10000,
     "estimated_cost": 5500000000,
-    "gpu": 4
+    "gpu": 7
   },
   {
     "run_id": "auc_zofosgda_arcene_highdim_M_10_s14_347944d",
@@ -945,6 +981,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 10000,
+    "optimization_dim": 1280259,
     "q": 10,
     "delta": 0.001,
     "x_momentum": true,
@@ -957,9 +995,8 @@
     "lam": 0.005,
     "n_train": 100,
     "n_test": 100,
-    "feature_dim": 10000,
     "estimated_cost": 10500000000,
-    "gpu": 5
+    "gpu": 6
   },
   {
     "run_id": "auc_zofosgda_arcene_highdim_M_10_s42_18b4ef4",
@@ -971,6 +1008,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 10000,
+    "optimization_dim": 1280259,
     "q": 10,
     "delta": 0.001,
     "x_momentum": true,
@@ -983,9 +1022,8 @@
     "lam": 0.005,
     "n_train": 100,
     "n_test": 100,
-    "feature_dim": 10000,
     "estimated_cost": 10500000000,
-    "gpu": 6
+    "gpu": 7
   },
   {
     "run_id": "auc_zofosgda_arcene_highdim_M_10_s81_3139fd8",
@@ -997,6 +1035,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 10000,
+    "optimization_dim": 1280259,
     "q": 10,
     "delta": 0.001,
     "x_momentum": true,
@@ -1009,9 +1049,8 @@
     "lam": 0.005,
     "n_train": 100,
     "n_test": 100,
-    "feature_dim": 10000,
     "estimated_cost": 10500000000,
-    "gpu": 7
+    "gpu": 6
   },
   {
     "run_id": "auc_zofosgda_arcene_highdim_M_15_s14_da7e298",
@@ -1023,6 +1062,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 10000,
+    "optimization_dim": 1280259,
     "q": 15,
     "delta": 0.001,
     "x_momentum": true,
@@ -1035,9 +1076,8 @@
     "lam": 0.005,
     "n_train": 100,
     "n_test": 100,
-    "feature_dim": 10000,
     "estimated_cost": 15500000000,
-    "gpu": 3
+    "gpu": 6
   },
   {
     "run_id": "auc_zofosgda_arcene_highdim_M_15_s42_98038e0",
@@ -1049,6 +1089,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 10000,
+    "optimization_dim": 1280259,
     "q": 15,
     "delta": 0.001,
     "x_momentum": true,
@@ -1061,7 +1103,6 @@
     "lam": 0.005,
     "n_train": 100,
     "n_test": 100,
-    "feature_dim": 10000,
     "estimated_cost": 15500000000,
     "gpu": 7
   },
@@ -1075,6 +1116,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 10000,
+    "optimization_dim": 1280259,
     "q": 15,
     "delta": 0.001,
     "x_momentum": true,
@@ -1087,9 +1130,8 @@
     "lam": 0.005,
     "n_train": 100,
     "n_test": 100,
-    "feature_dim": 10000,
     "estimated_cost": 15500000000,
-    "gpu": 4
+    "gpu": 6
   },
   {
     "run_id": "auc_zofosgda_arcene_highdim_M_sqrt_d_s14_5e645b9",
@@ -1101,7 +1143,9 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
-    "q": 100,
+    "feature_dim": 10000,
+    "optimization_dim": 1280259,
+    "q": 1131,
     "delta": 0.001,
     "x_momentum": true,
     "y_momentum": true,
@@ -1113,9 +1157,8 @@
     "lam": 0.005,
     "n_train": 100,
     "n_test": 100,
-    "feature_dim": 10000,
-    "estimated_cost": 100500000000,
-    "gpu": 4
+    "estimated_cost": 1131500000000,
+    "gpu": 6
   },
   {
     "run_id": "auc_zofosgda_arcene_highdim_M_sqrt_d_s42_a695df7",
@@ -1127,7 +1170,9 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
-    "q": 100,
+    "feature_dim": 10000,
+    "optimization_dim": 1280259,
+    "q": 1131,
     "delta": 0.001,
     "x_momentum": true,
     "y_momentum": true,
@@ -1139,9 +1184,8 @@
     "lam": 0.005,
     "n_train": 100,
     "n_test": 100,
-    "feature_dim": 10000,
-    "estimated_cost": 100500000000,
-    "gpu": 5
+    "estimated_cost": 1131500000000,
+    "gpu": 7
   },
   {
     "run_id": "auc_zofosgda_arcene_highdim_M_sqrt_d_s81_ce08491",
@@ -1153,7 +1197,9 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
-    "q": 100,
+    "feature_dim": 10000,
+    "optimization_dim": 1280259,
+    "q": 1131,
     "delta": 0.001,
     "x_momentum": true,
     "y_momentum": true,
@@ -1165,8 +1211,7 @@
     "lam": 0.005,
     "n_train": 100,
     "n_test": 100,
-    "feature_dim": 10000,
-    "estimated_cost": 100500000000,
+    "estimated_cost": 1131500000000,
     "gpu": 6
   },
   {
@@ -1179,6 +1224,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 20000,
+    "optimization_dim": 2560259,
     "q": 1,
     "delta": 0.001,
     "x_momentum": true,
@@ -1191,9 +1238,8 @@
     "lam": 0.003,
     "n_train": 300,
     "n_test": 300,
-    "feature_dim": 20000,
     "estimated_cost": 9000000000,
-    "gpu": 4
+    "gpu": 7
   },
   {
     "run_id": "auc_zofosgda_dexter_highdim_M_1_s42_a78c8c9",
@@ -1205,6 +1251,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 20000,
+    "optimization_dim": 2560259,
     "q": 1,
     "delta": 0.001,
     "x_momentum": true,
@@ -1217,9 +1265,8 @@
     "lam": 0.003,
     "n_train": 300,
     "n_test": 300,
-    "feature_dim": 20000,
     "estimated_cost": 9000000000,
-    "gpu": 3
+    "gpu": 6
   },
   {
     "run_id": "auc_zofosgda_dexter_highdim_M_1_s81_170cc07",
@@ -1231,6 +1278,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 20000,
+    "optimization_dim": 2560259,
     "q": 1,
     "delta": 0.001,
     "x_momentum": true,
@@ -1243,9 +1292,8 @@
     "lam": 0.003,
     "n_train": 300,
     "n_test": 300,
-    "feature_dim": 20000,
     "estimated_cost": 9000000000,
-    "gpu": 5
+    "gpu": 7
   },
   {
     "run_id": "auc_zofosgda_dexter_highdim_M_5_s14_13fa741",
@@ -1257,6 +1305,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 20000,
+    "optimization_dim": 2560259,
     "q": 5,
     "delta": 0.001,
     "x_momentum": true,
@@ -1269,7 +1319,6 @@
     "lam": 0.003,
     "n_train": 300,
     "n_test": 300,
-    "feature_dim": 20000,
     "estimated_cost": 33000000000,
     "gpu": 7
   },
@@ -1283,6 +1332,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 20000,
+    "optimization_dim": 2560259,
     "q": 5,
     "delta": 0.001,
     "x_momentum": true,
@@ -1295,9 +1346,8 @@
     "lam": 0.003,
     "n_train": 300,
     "n_test": 300,
-    "feature_dim": 20000,
     "estimated_cost": 33000000000,
-    "gpu": 4
+    "gpu": 7
   },
   {
     "run_id": "auc_zofosgda_dexter_highdim_M_5_s81_74b5d32",
@@ -1309,6 +1359,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 20000,
+    "optimization_dim": 2560259,
     "q": 5,
     "delta": 0.001,
     "x_momentum": true,
@@ -1321,9 +1373,8 @@
     "lam": 0.003,
     "n_train": 300,
     "n_test": 300,
-    "feature_dim": 20000,
     "estimated_cost": 33000000000,
-    "gpu": 5
+    "gpu": 6
   },
   {
     "run_id": "auc_zofosgda_dexter_highdim_M_10_s14_601958b",
@@ -1335,6 +1386,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 20000,
+    "optimization_dim": 2560259,
     "q": 10,
     "delta": 0.001,
     "x_momentum": true,
@@ -1347,9 +1400,8 @@
     "lam": 0.003,
     "n_train": 300,
     "n_test": 300,
-    "feature_dim": 20000,
     "estimated_cost": 63000000000,
-    "gpu": 3
+    "gpu": 7
   },
   {
     "run_id": "auc_zofosgda_dexter_highdim_M_10_s42_e053c63",
@@ -1361,6 +1413,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 20000,
+    "optimization_dim": 2560259,
     "q": 10,
     "delta": 0.001,
     "x_momentum": true,
@@ -1373,9 +1427,8 @@
     "lam": 0.003,
     "n_train": 300,
     "n_test": 300,
-    "feature_dim": 20000,
     "estimated_cost": 63000000000,
-    "gpu": 7
+    "gpu": 6
   },
   {
     "run_id": "auc_zofosgda_dexter_highdim_M_10_s81_066db06",
@@ -1387,6 +1440,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 20000,
+    "optimization_dim": 2560259,
     "q": 10,
     "delta": 0.001,
     "x_momentum": true,
@@ -1399,9 +1454,8 @@
     "lam": 0.003,
     "n_train": 300,
     "n_test": 300,
-    "feature_dim": 20000,
     "estimated_cost": 63000000000,
-    "gpu": 6
+    "gpu": 7
   },
   {
     "run_id": "auc_zofosgda_dexter_highdim_M_15_s14_1244c41",
@@ -1413,6 +1467,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 20000,
+    "optimization_dim": 2560259,
     "q": 15,
     "delta": 0.001,
     "x_momentum": true,
@@ -1425,9 +1481,8 @@
     "lam": 0.003,
     "n_train": 300,
     "n_test": 300,
-    "feature_dim": 20000,
     "estimated_cost": 93000000000,
-    "gpu": 7
+    "gpu": 6
   },
   {
     "run_id": "auc_zofosgda_dexter_highdim_M_15_s42_0c356b3",
@@ -1439,6 +1494,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 20000,
+    "optimization_dim": 2560259,
     "q": 15,
     "delta": 0.001,
     "x_momentum": true,
@@ -1451,9 +1508,8 @@
     "lam": 0.003,
     "n_train": 300,
     "n_test": 300,
-    "feature_dim": 20000,
     "estimated_cost": 93000000000,
-    "gpu": 4
+    "gpu": 7
   },
   {
     "run_id": "auc_zofosgda_dexter_highdim_M_15_s81_01978ea",
@@ -1465,6 +1521,8 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
+    "feature_dim": 20000,
+    "optimization_dim": 2560259,
     "q": 15,
     "delta": 0.001,
     "x_momentum": true,
@@ -1477,9 +1535,8 @@
     "lam": 0.003,
     "n_train": 300,
     "n_test": 300,
-    "feature_dim": 20000,
     "estimated_cost": 93000000000,
-    "gpu": 5
+    "gpu": 6
   },
   {
     "run_id": "auc_zofosgda_dexter_highdim_M_sqrt_d_s14_ddec610",
@@ -1491,7 +1548,9 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
-    "q": 141,
+    "feature_dim": 20000,
+    "optimization_dim": 2560259,
+    "q": 1600,
     "delta": 0.001,
     "x_momentum": true,
     "y_momentum": true,
@@ -1503,8 +1562,7 @@
     "lam": 0.003,
     "n_train": 300,
     "n_test": 300,
-    "feature_dim": 20000,
-    "estimated_cost": 849000000000,
+    "estimated_cost": 9603000000000,
     "gpu": 3
   },
   {
@@ -1517,7 +1575,9 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
-    "q": 141,
+    "feature_dim": 20000,
+    "optimization_dim": 2560259,
+    "q": 1600,
     "delta": 0.001,
     "x_momentum": true,
     "y_momentum": true,
@@ -1529,8 +1589,7 @@
     "lam": 0.003,
     "n_train": 300,
     "n_test": 300,
-    "feature_dim": 20000,
-    "estimated_cost": 849000000000,
+    "estimated_cost": 9603000000000,
     "gpu": 4
   },
   {
@@ -1543,7 +1602,9 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
-    "q": 141,
+    "feature_dim": 20000,
+    "optimization_dim": 2560259,
+    "q": 1600,
     "delta": 0.001,
     "x_momentum": true,
     "y_momentum": true,
@@ -1555,8 +1616,7 @@
     "lam": 0.003,
     "n_train": 300,
     "n_test": 300,
-    "feature_dim": 20000,
-    "estimated_cost": 849000000000,
+    "estimated_cost": 9603000000000,
     "gpu": 5
   }
 ]

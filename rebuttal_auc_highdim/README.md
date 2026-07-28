@@ -4,12 +4,16 @@ This suite adds Madelon, Gisette, Arcene, and Dexter to the ZOFOGDA AUC experime
 The public validation split is frozen as the evaluation split; hidden challenge test
 sets are never used.
 
-| Dataset | Input dimension | Train / validation | floor(sqrt(d)) |
-|---|---:|---:|---:|
-| Madelon | 500 | 2000 / 600 | 22 |
-| Gisette | 5000 | 6000 / 1000 | 70 |
-| Arcene | 10000 | 100 / 100 | 100 |
-| Dexter | 20000 | 300 / 300 | 141 |
+Here `d` is the full optimized primal parameter count, not the raw feature count.
+With hidden width 128, `d = 128 * input_dim + 259` (MLP parameters plus
+the two AUC scalars `a` and `b`).
+
+| Dataset | Input dimension | Optimized parameters d | Train / validation | floor(sqrt(d)) |
+|---|---:|---:|---:|---:|
+| Madelon | 500 | 64,259 | 2000 / 600 | 253 |
+| Gisette | 5000 | 640,259 | 6000 / 1000 | 800 |
+| Arcene | 10000 | 1,280,259 | 100 / 100 | 1,131 |
+| Dexter | 20000 | 2,560,259 | 300 / 300 | 1,600 |
 
 Formal runs use 500 epochs, batch size 128, seeds 14/42/81, delta 1e-3,
 scheduled paper momentum, and M in {1, 5, 10, 15, floor(sqrt(d))}. M=5 is

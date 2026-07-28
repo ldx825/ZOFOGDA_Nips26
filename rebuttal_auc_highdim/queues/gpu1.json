@@ -9,7 +9,9 @@
     "epochs": 500,
     "batch_size": 128,
     "hidden": 128,
-    "q": 70,
+    "feature_dim": 5000,
+    "optimization_dim": 640259,
+    "q": 800,
     "delta": 0.001,
     "x_momentum": true,
     "y_momentum": true,
@@ -21,8 +23,7 @@
     "lam": 0.003,
     "n_train": 6000,
     "n_test": 1000,
-    "feature_dim": 5000,
-    "estimated_cost": 2115000000000,
+    "estimated_cost": 24015000000000,
     "gpu": 1
   }
 ]
